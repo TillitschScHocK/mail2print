@@ -1,28 +1,26 @@
 FROM python:3.12-slim
 
-# Set environment variables to non-interactive to suppress prompts
-ENV DEBIAN_FRONTEND=noninteractive
+# Install CUPS client tools and supervisord
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cups-client \
+    supervisor \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install system dependencies and security updates
-RUN apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y --no-install-recommends \
-        libmagic1 \
-        cups-client \
-        poppler-utils \
-        unoconv \
-        libreoffice-core \
-        libreoffice-writer \
-        ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy script into the image
-COPY print_email.py .
+COPY app/ app/
+COPY templates/ templates/
+COPY supervisord.conf /etc/supervisor/conf.d/email2print.conf
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Run the script
-CMD ["python3", "print_email.py"]
+# Ensure runtime directories exist
+RUN mkdir -p /app/data /app/logs
+
+# WebUI port
+EXPOSE 635
+
+CMD ["/entrypoint.sh"]

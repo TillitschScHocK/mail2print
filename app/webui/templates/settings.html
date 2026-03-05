@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6 animate__animated animate__fadeIn">Settings</h1>
+
+<div class="grid lg:grid-cols-2 gap-6">
+  <!-- Environment -->
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 animate__animated animate__fadeInUp">
+    <h2 class="font-semibold text-base mb-4 flex items-center gap-2">
+      <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      Environment Variables
+    </h2>
+    <dl class="text-sm space-y-2">
+      {% for key, val in env.items() %}
+      <div class="flex justify-between border-b dark:border-gray-800 pb-1">
+        <dt class="font-mono text-gray-500 dark:text-gray-400 text-xs">{{ key }}</dt>
+        <dd class="font-mono text-right truncate max-w-[200px] {% if val == '***' %}text-gray-400{% endif %}">{{ val }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+  </div>
+
+  <!-- Printer status -->
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 animate__animated animate__fadeInUp" style="animation-delay:.1s">
+    <h2 class="font-semibold text-base mb-4 flex items-center gap-2">
+      <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      Printer Status (lpstat)
+    </h2>
+    <pre class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap min-h-[80px]">{{ printer_status }}</pre>
+  </div>
+</div>
+{% endblock %}

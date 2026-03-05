@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Templates{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6 animate__animated animate__fadeIn">Confirmation Templates</h1>
+<p class="text-sm text-gray-500 dark:text-gray-400 mb-6">These Jinja2 templates are used for the confirmation emails sent after a print job. Place custom templates in the <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">templates/</code> folder.</p>
+
+<div class="grid gap-4 animate__animated animate__fadeInUp">
+  {% for tpl in templates %}
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-5 border-2 transition-all duration-200 {% if tpl == active %}border-indigo-500{% else %}border-transparent{% endif %}">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <span class="font-semibold text-sm">{{ tpl }}</span>
+        {% if tpl == active %}
+          <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 text-xs font-bold">ACTIVE</span>
+        {% endif %}
+      </div>
+      {% if tpl != active %}
+      <button onclick="activateTemplate('{{ tpl }}')"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition">
+        Set as Active
+      </button>
+      {% endif %}
+    </div>
+    <pre class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ previews[tpl] }}{% if previews[tpl]|length == 300 %}...{% endif %}</pre>
+  </div>
+  {% else %}
+  <div class="text-center text-gray-400 py-12">No templates found in /app/templates/</div>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function activateTemplate(name) {
+  const res = await fetch(`/templates/activate/${name}`, { method: 'POST' });
+  if (res.ok) location.reload();
+  else alert('Failed to activate template.');
+}
+</script>
+{% endblock %}

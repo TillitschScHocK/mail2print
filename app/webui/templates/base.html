@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}email2Print{% endblock %} — Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#6366f1', dark: '#4f46e5' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200; }
+    .sidebar-link:hover { @apply bg-white/10; }
+    .sidebar-link.active { @apply bg-white/20 font-semibold; }
+    .stat-card { @apply rounded-2xl p-6 shadow-lg text-white animate__animated animate__fadeInUp; }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen flex transition-colors duration-300" id="app-body">
+
+<!-- Sidebar -->
+<aside class="w-64 min-h-screen bg-gradient-to-b from-indigo-700 to-indigo-900 flex flex-col py-6 px-3 shadow-xl flex-shrink-0">
+  <div class="flex items-center gap-3 px-4 mb-8">
+    <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+    </div>
+    <div>
+      <div class="text-white font-bold text-lg leading-none">email2Print</div>
+      <div class="text-indigo-200 text-xs">Admin Dashboard</div>
+    </div>
+  </div>
+
+  <nav class="flex flex-col gap-1 text-indigo-100">
+    <a href="/" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Dashboard
+    </a>
+    <a href="/jobs" class="sidebar-link {% if active_page == 'jobs' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Job History
+    </a>
+    <a href="/templates" class="sidebar-link {% if active_page == 'templates' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+      Templates
+    </a>
+    <a href="/logs" class="sidebar-link {% if active_page == 'logs' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Live Logs
+    </a>
+    <a href="/settings" class="sidebar-link {% if active_page == 'settings' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Settings
+    </a>
+  </nav>
+
+  <div class="mt-auto px-4">
+    <button onclick="toggleDark()" class="w-full flex items-center gap-2 text-indigo-200 text-xs hover:text-white transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      Toggle Dark Mode
+    </button>
+  </div>
+</aside>
+
+<!-- Main content -->
+<main class="flex-1 overflow-auto">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<script>
+  function toggleDark() {
+    const html = document.documentElement;
+    html.classList.toggle('dark');
+    localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+  }
+  (function() {
+    const t = localStorage.getItem('theme');
+    if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+  })();
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6 animate__animated animate__fadeIn">Dashboard</h1>
+
+<!-- Stat Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="stat-card bg-gradient-to-br from-indigo-500 to-indigo-700" style="animation-delay:.0s">
+    <div class="text-3xl font-bold">{{ total }}</div>
+    <div class="text-indigo-100 text-sm mt-1">Total Jobs</div>
+  </div>
+  <div class="stat-card bg-gradient-to-br from-emerald-500 to-emerald-700" style="animation-delay:.1s">
+    <div class="text-3xl font-bold">{{ success }}</div>
+    <div class="text-emerald-100 text-sm mt-1">Successful</div>
+  </div>
+  <div class="stat-card bg-gradient-to-br from-rose-500 to-rose-700" style="animation-delay:.2s">
+    <div class="text-3xl font-bold">{{ failed }}</div>
+    <div class="text-rose-100 text-sm mt-1">Failed</div>
+  </div>
+  <div class="stat-card bg-gradient-to-br from-amber-500 to-amber-700" style="animation-delay:.3s">
+    <div class="text-sm font-bold leading-tight">{{ last_print }}</div>
+    <div class="text-amber-100 text-sm mt-1">Last Print</div>
+  </div>
+</div>
+
+<!-- Recent Jobs -->
+<div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 animate__animated animate__fadeInUp" style="animation-delay:.2s">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-semibold text-lg">Recent Jobs</h2>
+    <a href="/jobs" class="text-indigo-500 text-sm hover:underline">View all</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-400 border-b dark:border-gray-700">
+          <th class="pb-2 pr-4">ID</th>
+          <th class="pb-2 pr-4">Time</th>
+          <th class="pb-2 pr-4">Sender</th>
+          <th class="pb-2 pr-4">File</th>
+          <th class="pb-2">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in recent %}
+        <tr class="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+          <td class="py-2 pr-4 font-mono text-xs text-gray-400">{{ job.id }}</td>
+          <td class="py-2 pr-4 text-xs">{{ job.timestamp[:19]|replace('T',' ') }}</td>
+          <td class="py-2 pr-4 truncate max-w-[160px]">{{ job.sender }}</td>
+          <td class="py-2 pr-4 truncate max-w-[160px]">{{ job.filename }}</td>
+          <td class="py-2">
+            {% if job.status == 'success' %}
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-xs font-semibold">success</span>
+            {% else %}
+              <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300 text-xs font-semibold">failed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="py-6 text-center text-gray-400">No print jobs yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Auto-refresh stats every 30s
+  setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}

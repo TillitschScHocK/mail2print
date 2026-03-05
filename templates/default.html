@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+    .card { background: #fff; border-radius: 12px; padding: 32px; max-width: 520px; margin: auto; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+    h2 { color: #6366f1; margin-top: 0; }
+    .label { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+    .value { font-weight: bold; margin-bottom: 16px; }
+    .badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 12px; font-weight: bold;
+      background: {% if status == 'success' %}#d1fae5{% else %}#fee2e2{% endif %};
+      color: {% if status == 'success' %}#065f46{% else %}#991b1b{% endif %}; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🖨️ Print Job Confirmation</h2>
+    <div class="label">File</div><div class="value">{{ filename }}</div>
+    <div class="label">Printer</div><div class="value">{{ printer }}</div>
+    <div class="label">Sent by</div><div class="value">{{ sender }}</div>
+    <div class="label">Time</div><div class="value">{{ timestamp[:19]|replace('T', ' ') }}</div>
+    <div class="label">Job ID</div><div class="value" style="font-family:monospace;font-size:12px">{{ job_id }}</div>
+    <div class="label">Status</div><div><span class="badge">{{ status }}</span></div>
+  </div>
+</body>
+</html>
