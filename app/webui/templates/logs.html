@@ -1,40 +1,70 @@
 {% extends 'base.html' %}
 {% block title %}Live Logs{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4 animate__animated animate__fadeIn">Live Logs</h1>
-<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Real-time log stream from <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">email2print.log</code></p>
 
-<div class="rounded-2xl overflow-hidden shadow-xl animate__animated animate__fadeInUp">
-  <div class="bg-gray-900 px-4 py-2 flex items-center gap-2">
-    <span class="w-3 h-3 rounded-full bg-red-500"></span>
-    <span class="w-3 h-3 rounded-full bg-yellow-400"></span>
-    <span class="w-3 h-3 rounded-full bg-green-400"></span>
-    <span class="text-gray-400 text-xs ml-2">email2print.log</span>
-    <span id="status-dot" class="ml-auto flex items-center gap-1 text-xs text-green-400">
-      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Live
-    </span>
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Live Logs</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Real-time stream from <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">email2print.log</code></p>
   </div>
-  <div id="log-output"
-    class="bg-gray-950 text-green-300 font-mono text-xs p-4 h-[65vh] overflow-y-auto whitespace-pre-wrap leading-relaxed">
+  <div class="flex items-center gap-2">
+    <button onclick="clearLogs()" class="btn-ghost text-xs">Clear</button>
+    <button onclick="toggleScroll()" class="btn-ghost text-xs" id="scroll-btn">Auto-scroll: ON</button>
   </div>
 </div>
+
+<div class="rounded-2xl overflow-hidden shadow-card-lg border border-gray-200 dark:border-gray-800">
+  <!-- Terminal top bar -->
+  <div class="bg-gray-800 dark:bg-gray-900 px-4 py-2.5 flex items-center gap-2">
+    <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+    <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+    <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+    <span class="text-gray-400 text-xs ml-2 font-mono">email2print.log</span>
+    <div class="flex-1"></div>
+    <span id="status-dot" class="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      Live
+    </span>
+  </div>
+
+  <!-- Log output -->
+  <div id="log-output"
+    class="bg-gray-950 text-green-300 font-mono text-xs p-4 h-[68vh] overflow-y-auto leading-relaxed">
+  </div>
+</div>
+
 {% endblock %}
 {% block scripts %}
 <script>
-  const out = document.getElementById('log-output');
-  const dot = document.getElementById('status-dot');
+  const out      = document.getElementById('log-output');
+  const dot      = document.getElementById('status-dot');
+  let autoScroll = true;
+
+  function toggleScroll() {
+    autoScroll = !autoScroll;
+    document.getElementById('scroll-btn').textContent = 'Auto-scroll: ' + (autoScroll ? 'ON' : 'OFF');
+  }
+
+  function clearLogs() {
+    out.innerHTML = '';
+  }
+
   const src = new EventSource('/logs/stream');
   src.onmessage = (e) => {
     const line = document.createElement('div');
+    line.className = 'py-0.5';
     line.textContent = e.data;
-    if (e.data.includes('[ERROR]')) line.classList.add('text-red-400');
-    else if (e.data.includes('[WARNING]')) line.classList.add('text-yellow-300');
+    if      (e.data.includes('[ERROR]'))   line.classList.add('text-red-400');
+    else if (e.data.includes('[WARNING]')) line.classList.add('text-amber-300');
+    else if (e.data.includes('[INFO]'))    line.classList.add('text-blue-300');
     out.appendChild(line);
-    out.scrollTop = out.scrollHeight;
+    if (autoScroll) out.scrollTop = out.scrollHeight;
+    // Keep max 500 lines for performance
+    while (out.children.length > 500) out.removeChild(out.firstChild);
   };
   src.onerror = () => {
-    dot.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-400"></span> Disconnected';
-    dot.classList.replace('text-green-400', 'text-red-400');
+    dot.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> Disconnected';
+    dot.className = dot.className.replace('text-emerald-400', 'text-rose-400');
   };
 </script>
 {% endblock %}

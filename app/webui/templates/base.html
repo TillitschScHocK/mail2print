@@ -4,91 +4,207 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}email2Print{% endblock %} — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
           colors: {
-            brand: { DEFAULT: '#6366f1', dark: '#4f46e5' }
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' }
+          },
+          boxShadow: {
+            card: '0 1px 3px 0 rgb(0 0 0 / .07), 0 1px 2px -1px rgb(0 0 0 / .07)',
+            'card-lg': '0 4px 16px -2px rgb(0 0 0 / .1), 0 2px 6px -2px rgb(0 0 0 / .06)'
           }
         }
       }
     }
   </script>
-  <style>
-    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200; }
-    .sidebar-link:hover { @apply bg-white/10; }
-    .sidebar-link.active { @apply bg-white/20 font-semibold; }
-    .stat-card { @apply rounded-2xl p-6 shadow-lg text-white animate__animated animate__fadeInUp; }
+  <style type="text/tailwindcss">
+    @layer components {
+      .nav-link {
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+               text-indigo-200 hover:text-white hover:bg-white/10
+               transition-all duration-150 cursor-pointer;
+      }
+      .nav-link.active {
+        @apply bg-white/15 text-white font-semibold;
+      }
+      .card {
+        @apply bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800;
+      }
+      .btn-primary {
+        @apply inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 active:bg-brand-800
+               text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-150
+               focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+      }
+      .btn-ghost {
+        @apply inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl
+               text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800
+               transition-all duration-150;
+      }
+      .input {
+        @apply rounded-xl border border-gray-200 dark:border-gray-700
+               bg-white dark:bg-gray-900 text-sm px-3 py-2
+               focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+               placeholder-gray-400 dark:placeholder-gray-500 transition;
+      }
+      .badge-success { @apply px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 text-xs font-semibold; }
+      .badge-failed  { @apply px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 text-xs font-semibold; }
+      .badge-active  { @apply px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 text-xs font-semibold; }
+    }
   </style>
+  {% block head %}{% endblock %}
 </head>
-<body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen flex transition-colors duration-300" id="app-body">
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen font-sans antialiased" id="app-body">
 
-<!-- Sidebar -->
-<aside class="w-64 min-h-screen bg-gradient-to-b from-indigo-700 to-indigo-900 flex flex-col py-6 px-3 shadow-xl flex-shrink-0">
-  <div class="flex items-center gap-3 px-4 mb-8">
-    <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+<div class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-40 flex flex-col w-60 bg-gradient-to-b from-brand-700 to-brand-900
+           shadow-card-lg transform -translate-x-full md:translate-x-0 transition-transform duration-200">
+
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+      <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+        </svg>
+      </div>
+      <div class="overflow-hidden">
+        <div class="text-white font-bold text-base leading-tight truncate">email2Print</div>
+        <div class="text-indigo-300 text-xs">Admin Panel</div>
+      </div>
     </div>
-    <div>
-      <div class="text-white font-bold text-lg leading-none">email2Print</div>
-      <div class="text-indigo-200 text-xs">Admin Dashboard</div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+
+      <a href="/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Dashboard
+      </a>
+
+      <a href="/jobs" class="nav-link {% if active_page == 'jobs' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Job History
+      </a>
+
+      <a href="/templates" class="nav-link {% if active_page == 'templates' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+        </svg>
+        Mail Templates
+      </a>
+
+      <a href="/logs" class="nav-link {% if active_page == 'logs' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Live Logs
+      </a>
+
+      <a href="/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <!-- Footer -->
+    <div class="px-3 py-4 border-t border-white/10 space-y-1">
+      <button onclick="toggleDark()"
+        class="nav-link w-full text-left">
+        <svg class="w-4 h-4 shrink-0" id="dark-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+        <span id="dark-label">Dark Mode</span>
+      </button>
+      <div class="px-3 py-2 text-indigo-400 text-xs">email2Print &copy; 2025</div>
     </div>
-  </div>
+  </aside>
 
-  <nav class="flex flex-col gap-1 text-indigo-100">
-    <a href="/" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-      Dashboard
-    </a>
-    <a href="/jobs" class="sidebar-link {% if active_page == 'jobs' %}active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-      Job History
-    </a>
-    <a href="/templates" class="sidebar-link {% if active_page == 'templates' %}active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-      Templates
-    </a>
-    <a href="/logs" class="sidebar-link {% if active_page == 'logs' %}active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      Live Logs
-    </a>
-    <a href="/settings" class="sidebar-link {% if active_page == 'settings' %}active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      Settings
-    </a>
-  </nav>
+  <!-- Mobile overlay -->
+  <div id="sidebar-overlay" onclick="closeSidebar()"
+    class="fixed inset-0 z-30 bg-black/40 hidden md:hidden"></div>
 
-  <div class="mt-auto px-4">
-    <button onclick="toggleDark()" class="w-full flex items-center gap-2 text-indigo-200 text-xs hover:text-white transition">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-      Toggle Dark Mode
-    </button>
-  </div>
-</aside>
+  <!-- Page wrapper -->
+  <div class="flex-1 flex flex-col md:ml-60 min-w-0">
 
-<!-- Main content -->
-<main class="flex-1 overflow-auto">
-  <div class="max-w-7xl mx-auto px-6 py-8">
-    {% block content %}{% endblock %}
+    <!-- Top bar -->
+    <header class="sticky top-0 z-20 flex items-center gap-3 px-4 md:px-6 h-14
+                   bg-white/80 dark:bg-gray-900/80 backdrop-blur-md
+                   border-b border-gray-200 dark:border-gray-800">
+      <!-- Hamburger -->
+      <button onclick="openSidebar()" class="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <!-- Breadcrumb title -->
+      <span class="font-semibold text-sm text-gray-700 dark:text-gray-200">{% block title %}email2Print{% endblock %}</span>
+      <!-- Spacer -->
+      <div class="flex-1"></div>
+      <!-- Live indicator -->
+      <span class="flex items-center gap-1.5 text-xs text-emerald-500 font-medium">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        Online
+      </span>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-auto">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
   </div>
-</main>
+</div>
 
 <script>
   function toggleDark() {
     const html = document.documentElement;
-    html.classList.toggle('dark');
-    localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+    const on = html.classList.toggle('dark');
+    localStorage.setItem('theme', on ? 'dark' : 'light');
+    document.getElementById('dark-label').textContent = on ? 'Light Mode' : 'Dark Mode';
   }
   (function() {
     const t = localStorage.getItem('theme');
-    if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = t === 'dark' || (!t && prefersDark);
+    if (isDark) document.documentElement.classList.add('dark');
+    if (document.getElementById('dark-label')) {
+      document.getElementById('dark-label').textContent = isDark ? 'Light Mode' : 'Dark Mode';
     }
   })();
+
+  function openSidebar() {
+    document.getElementById('sidebar').classList.remove('-translate-x-full');
+    document.getElementById('sidebar-overlay').classList.remove('hidden');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay').classList.add('hidden');
+  }
 </script>
 
 {% block scripts %}{% endblock %}

@@ -1,32 +1,69 @@
 {% extends 'base.html' %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-6 animate__animated animate__fadeIn">Settings</h1>
 
-<div class="grid lg:grid-cols-2 gap-6">
-  <!-- Environment -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 animate__animated animate__fadeInUp">
-    <h2 class="font-semibold text-base mb-4 flex items-center gap-2">
-      <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+<div class="mb-6">
+  <h1 class="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Read-only view of environment variables and printer status.</p>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-5">
+
+  <!-- Environment Variables -->
+  <div class="card p-5">
+    <h2 class="font-semibold text-sm flex items-center gap-2 mb-4">
+      <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+      </svg>
       Environment Variables
     </h2>
-    <dl class="text-sm space-y-2">
+    <div class="space-y-0 divide-y divide-gray-100 dark:divide-gray-800 text-sm">
       {% for key, val in env.items() %}
-      <div class="flex justify-between border-b dark:border-gray-800 pb-1">
-        <dt class="font-mono text-gray-500 dark:text-gray-400 text-xs">{{ key }}</dt>
-        <dd class="font-mono text-right truncate max-w-[200px] {% if val == '***' %}text-gray-400{% endif %}">{{ val }}</dd>
+      <div class="flex items-center justify-between py-2 gap-3">
+        <span class="font-mono text-xs text-gray-500 dark:text-gray-400 shrink-0">{{ key }}</span>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="font-mono text-xs truncate max-w-[180px] {% if val == '***' %}text-gray-400{% endif %}" title="{{ val }}">{{ val }}</span>
+          {% if val != '***' and val != '—' %}
+          <button onclick="copyVal('{{ val }}')" title="Copy"
+            class="shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </button>
+          {% endif %}
+        </div>
       </div>
       {% endfor %}
-    </dl>
+    </div>
   </div>
 
-  <!-- Printer status -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 animate__animated animate__fadeInUp" style="animation-delay:.1s">
-    <h2 class="font-semibold text-base mb-4 flex items-center gap-2">
-      <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-      Printer Status (lpstat)
+  <!-- Printer Status -->
+  <div class="card p-5">
+    <h2 class="font-semibold text-sm flex items-center gap-2 mb-4">
+      <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Printer Status
+      <span class="text-xs font-normal text-gray-400">(lpstat -p)</span>
     </h2>
-    <pre class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap min-h-[80px]">{{ printer_status }}</pre>
+    <pre class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-xs text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono">{{ printer_status }}</pre>
   </div>
+
 </div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  function copyVal(val) {
+    navigator.clipboard.writeText(val).then(() => {
+      const t = document.createElement('div');
+      t.className = 'fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium shadow-card-lg';
+      t.textContent = 'Copied!';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2000);
+    });
+  }
+</script>
 {% endblock %}

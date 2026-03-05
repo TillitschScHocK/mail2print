@@ -1,39 +1,271 @@
 {% extends 'base.html' %}
-{% block title %}Templates{% endblock %}
+{% block title %}Mail Templates{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/dracula.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
+<style>
+  .CodeMirror { height: 420px; font-size: 13px; font-family: 'JetBrains Mono', 'Fira Mono', monospace; border-radius: 0 0 12px 12px; }
+  .CodeMirror-scroll { padding: 8px 0; }
+  .lang-tab { transition: all .15s; }
+  .lang-tab.active { background: #4f46e5; color: #fff; }
+</style>
+{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-6 animate__animated animate__fadeIn">Confirmation Templates</h1>
-<p class="text-sm text-gray-500 dark:text-gray-400 mb-6">These Jinja2 templates are used for the confirmation emails sent after a print job. Place custom templates in the <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">templates/</code> folder.</p>
 
-<div class="grid gap-4 animate__animated animate__fadeInUp">
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Mail Templates</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Edit confirmation emails sent after a print job. Jinja2 variables: <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">{{ '{{' }} filename {{ '}}' }}</code>, <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">{{ '{{' }} printer {{ '}}' }}</code>, <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">{{ '{{' }} sender {{ '}}' }}</code>, <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">{{ '{{' }} status {{ '}}' }}</code>, <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">{{ '{{' }} job_id {{ '}}' }}</code></p>
+  </div>
+  <button onclick="openNewModal()" class="btn-primary shrink-0">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Template
+  </button>
+</div>
+
+<!-- Language quick-filter -->
+<div class="flex gap-2 mb-5">
+  <button onclick="filterLang('')"   id="lf-all" class="lang-tab active px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700">All</button>
+  <button onclick="filterLang('_en')" id="lf-en"  class="lang-tab px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700">🇬🇧 English</button>
+  <button onclick="filterLang('_de')" id="lf-de"  class="lang-tab px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700">🇩🇪 Deutsch</button>
+  <button onclick="filterLang('_es')" id="lf-es"  class="lang-tab px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700">🇪🇸 Español</button>
+</div>
+
+<!-- Template cards -->
+<div class="space-y-4" id="tpl-list">
   {% for tpl in templates %}
-  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-5 border-2 transition-all duration-200 {% if tpl == active %}border-indigo-500{% else %}border-transparent{% endif %}">
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-3">
-        <span class="font-semibold text-sm">{{ tpl }}</span>
+  <div class="card overflow-hidden" data-tpl-name="{{ tpl }}">
+
+    <!-- Card header -->
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+      <div class="flex-1 flex items-center gap-2 min-w-0">
+        <span class="font-semibold text-sm truncate">{{ tpl }}</span>
         {% if tpl == active %}
-          <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 text-xs font-bold">ACTIVE</span>
+          <span class="badge-active shrink-0">ACTIVE</span>
+        {% endif %}
+        {% if '_en' in tpl %}<span class="text-xs">🇬🇧</span>{% endif %}
+        {% if '_de' in tpl %}<span class="text-xs">🇩🇪</span>{% endif %}
+        {% if '_es' in tpl %}<span class="text-xs">🇪🇸</span>{% endif %}
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        {% if tpl != active %}
+        <button onclick="activateTemplate('{{ tpl }}')" class="btn-ghost text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30">
+          Set Active
+        </button>
+        {% endif %}
+        <button onclick="openEditor('{{ tpl }}')"
+          class="btn-primary text-xs" id="edit-btn-{{ tpl }}">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          Edit
+        </button>
+        {% if tpl != active %}
+        <button onclick="deleteTemplate('{{ tpl }}')" class="btn-ghost text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
         {% endif %}
       </div>
-      {% if tpl != active %}
-      <button onclick="activateTemplate('{{ tpl }}')"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition">
-        Set as Active
-      </button>
-      {% endif %}
     </div>
-    <pre class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ previews[tpl] }}{% if previews[tpl]|length == 300 %}...{% endif %}</pre>
+
+    <!-- Preview snippet -->
+    <div class="px-5 py-3 bg-gray-50 dark:bg-gray-900/50">
+      <pre class="text-xs text-gray-500 dark:text-gray-400 overflow-hidden whitespace-pre-wrap line-clamp-3">{{ previews[tpl] }}{% if previews[tpl]|length >= 400 %}...{% endif %}</pre>
+    </div>
+
+    <!-- Inline editor (hidden by default) -->
+    <div id="editor-{{ tpl }}" class="hidden">
+      <div class="px-5 pt-4 pb-2 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2">
+        <span class="text-xs font-semibold text-gray-500">Editor</span>
+        <div class="flex-1"></div>
+        <button onclick="previewTemplate('{{ tpl }}')" class="btn-ghost text-xs">Preview</button>
+        <button onclick="saveTemplate('{{ tpl }}')" class="btn-primary text-xs">Save</button>
+        <button onclick="closeEditor('{{ tpl }}')" class="btn-ghost text-xs">Close</button>
+      </div>
+      <div class="border-t border-gray-100 dark:border-gray-800">
+        <textarea id="ta-{{ tpl }}"></textarea>
+      </div>
+    </div>
   </div>
   {% else %}
-  <div class="text-center text-gray-400 py-12">No templates found in /app/templates/</div>
+  <div class="card p-12 text-center text-gray-400">
+    <svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    No templates found in <code>/app/templates/</code>
+  </div>
   {% endfor %}
 </div>
+
+<!-- Preview Modal -->
+<div id="preview-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-card-lg w-full max-w-2xl max-h-[85vh] flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+      <span class="font-semibold text-sm">Template Preview</span>
+      <button onclick="closePreview()" class="btn-ghost text-xs">Close</button>
+    </div>
+    <div class="flex-1 overflow-auto p-1">
+      <iframe id="preview-iframe" class="w-full rounded-xl" style="height:500px;border:none;"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- New Template Modal -->
+<div id="new-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-card-lg w-full max-w-md">
+    <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+      <h3 class="font-semibold">New Template</h3>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Template name</label>
+        <input id="new-tpl-name" type="text" placeholder="e.g. custom_en" class="input w-full" />
+        <p class="text-xs text-gray-400 mt-1">Append <code>_en</code>, <code>_de</code> or <code>_es</code> for language tags. <code>.html</code> is added automatically.</p>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Language preset</label>
+        <select id="new-tpl-lang" class="input w-full">
+          <option value="blank">Blank</option>
+          <option value="en">English (copy from default_en)</option>
+          <option value="de">Deutsch (copy from default_de)</option>
+          <option value="es">Español (copy from default_es)</option>
+        </select>
+      </div>
+    </div>
+    <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-2">
+      <button onclick="closeNewModal()" class="btn-ghost">Cancel</button>
+      <button onclick="createTemplate()" class="btn-primary">Create</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 {% block scripts %}
 <script>
+const editors = {};
+
+async function openEditor(name) {
+  const wrap = document.getElementById('editor-' + name);
+  wrap.classList.remove('hidden');
+  document.getElementById('edit-btn-' + name).textContent = '...';
+
+  if (!editors[name]) {
+    const res  = await fetch('/templates/' + encodeURIComponent(name) + '/content');
+    const data = await res.json();
+    const ta   = document.getElementById('ta-' + name);
+    const cm   = CodeMirror.fromTextArea(ta, {
+      mode: 'htmlmixed',
+      theme: document.documentElement.classList.contains('dark') ? 'dracula' : 'default',
+      lineNumbers: true,
+      lineWrapping: false,
+      tabSize: 2,
+      indentWithTabs: false,
+      autoCloseBrackets: true,
+      extraKeys: { 'Ctrl-S': () => saveTemplate(name), 'Cmd-S': () => saveTemplate(name) }
+    });
+    cm.setValue(data.content);
+    editors[name] = cm;
+  }
+  document.getElementById('edit-btn-' + name).textContent = 'Edit';
+}
+
+function closeEditor(name) {
+  document.getElementById('editor-' + name).classList.add('hidden');
+}
+
+async function saveTemplate(name) {
+  const cm = editors[name];
+  if (!cm) return;
+  const res = await fetch('/templates/' + encodeURIComponent(name) + '/save', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: cm.getValue() })
+  });
+  if (res.ok) {
+    showToast('Saved: ' + name, 'success');
+  } else {
+    showToast('Save failed!', 'error');
+  }
+}
+
+function previewTemplate(name) {
+  const cm = editors[name];
+  if (!cm) return;
+  const content = cm.getValue()
+    .replace(/\{\{\s*filename\s*\}\}/g, 'document.pdf')
+    .replace(/\{\{\s*printer\s*\}\}/g, 'Office Printer')
+    .replace(/\{\{\s*sender\s*\}\}/g, 'user@example.com')
+    .replace(/\{\{\s*status\s*\}\}/g, 'success')
+    .replace(/\{\{\s*job_id\s*\}\}/g, 'abc-123-def')
+    .replace(/\{\{\s*timestamp\[.*?\].*?\}\}/g, '2025-01-01 12:00:00')
+    .replace(/\{%.*?%\}/g, '');
+  const iframe = document.getElementById('preview-iframe');
+  iframe.srcdoc = content;
+  document.getElementById('preview-modal').classList.remove('hidden');
+}
+
+function closePreview() {
+  document.getElementById('preview-modal').classList.add('hidden');
+}
+
 async function activateTemplate(name) {
-  const res = await fetch(`/templates/activate/${name}`, { method: 'POST' });
+  const res = await fetch('/templates/activate/' + encodeURIComponent(name), { method: 'POST' });
   if (res.ok) location.reload();
-  else alert('Failed to activate template.');
+  else showToast('Failed to activate.', 'error');
+}
+
+async function deleteTemplate(name) {
+  if (!confirm('Delete template "' + name + '"?')) return;
+  const res = await fetch('/templates/' + encodeURIComponent(name), { method: 'DELETE' });
+  if (res.ok) location.reload();
+  else {
+    const d = await res.json();
+    showToast(d.error || 'Delete failed.', 'error');
+  }
+}
+
+function filterLang(suffix) {
+  document.querySelectorAll('.lang-tab').forEach(b => b.classList.remove('active'));
+  const ids = { '': 'lf-all', '_en': 'lf-en', '_de': 'lf-de', '_es': 'lf-es' };
+  document.getElementById(ids[suffix])?.classList.add('active');
+  document.querySelectorAll('#tpl-list [data-tpl-name]').forEach(el => {
+    const n = el.dataset.tplName;
+    el.style.display = (suffix === '' || n.includes(suffix)) ? '' : 'none';
+  });
+}
+
+function openNewModal()  { document.getElementById('new-modal').classList.remove('hidden'); }
+function closeNewModal() { document.getElementById('new-modal').classList.add('hidden'); }
+
+const LANG_PRESETS = {
+  en: async () => { try { const r = await fetch('/templates/default_en.html/content'); return (await r.json()).content; } catch { return '<!-- English template -->\n'; } },
+  de: async () => { try { const r = await fetch('/templates/default_de.html/content'); return (await r.json()).content; } catch { return '<!-- Deutsches Template -->\n'; } },
+  es: async () => { try { const r = await fetch('/templates/default_es.html/content'); return (await r.json()).content; } catch { return '<!-- Plantilla en Español -->\n'; } },
+  blank: async () => '<!-- New template -->\n'
+};
+
+async function createTemplate() {
+  const name = document.getElementById('new-tpl-name').value.trim();
+  const lang = document.getElementById('new-tpl-lang').value;
+  if (!name) { showToast('Please enter a name.', 'error'); return; }
+  const content = await LANG_PRESETS[lang]();
+  const res = await fetch('/templates/new', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, content })
+  });
+  if (res.ok) { closeNewModal(); location.reload(); }
+  else { const d = await res.json(); showToast(d.error || 'Error creating template.', 'error'); }
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'fixed bottom-4 right-4 z-[100] px-4 py-2.5 rounded-xl shadow-card-lg text-sm font-medium text-white transition-all '
+    + (type === 'success' ? 'bg-emerald-600' : 'bg-rose-600');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
 </script>
 {% endblock %}

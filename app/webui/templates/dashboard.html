@@ -1,71 +1,143 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-6 animate__animated animate__fadeIn">Dashboard</h1>
+
+<div class="mb-6">
+  <h1 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Overview of all print jobs and system status.</p>
+</div>
 
 <!-- Stat Cards -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-  <div class="stat-card bg-gradient-to-br from-indigo-500 to-indigo-700" style="animation-delay:.0s">
-    <div class="text-3xl font-bold">{{ total }}</div>
-    <div class="text-indigo-100 text-sm mt-1">Total Jobs</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="card p-5">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Jobs</p>
+        <p class="text-3xl font-bold mt-1" id="stat-total">{{ total }}</p>
+      </div>
+      <div class="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+    </div>
   </div>
-  <div class="stat-card bg-gradient-to-br from-emerald-500 to-emerald-700" style="animation-delay:.1s">
-    <div class="text-3xl font-bold">{{ success }}</div>
-    <div class="text-emerald-100 text-sm mt-1">Successful</div>
+
+  <div class="card p-5">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Successful</p>
+        <p class="text-3xl font-bold mt-1 text-emerald-500" id="stat-success">{{ success }}</p>
+      </div>
+      <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+    </div>
   </div>
-  <div class="stat-card bg-gradient-to-br from-rose-500 to-rose-700" style="animation-delay:.2s">
-    <div class="text-3xl font-bold">{{ failed }}</div>
-    <div class="text-rose-100 text-sm mt-1">Failed</div>
+
+  <div class="card p-5">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Failed</p>
+        <p class="text-3xl font-bold mt-1 text-rose-500" id="stat-failed">{{ failed }}</p>
+      </div>
+      <div class="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+    </div>
   </div>
-  <div class="stat-card bg-gradient-to-br from-amber-500 to-amber-700" style="animation-delay:.3s">
-    <div class="text-sm font-bold leading-tight">{{ last_print }}</div>
-    <div class="text-amber-100 text-sm mt-1">Last Print</div>
+
+  <div class="card p-5">
+    <div class="flex items-start justify-between mb-2">
+      <div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Success Rate</p>
+        <p class="text-3xl font-bold mt-1" id="stat-rate">{{ rate }}<span class="text-lg text-gray-400">%</span></p>
+      </div>
+      <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+      <div class="bg-amber-400 h-1.5 rounded-full transition-all duration-500" id="rate-bar" style="width: {{ rate }}%"></div>
+    </div>
   </div>
+
 </div>
 
-<!-- Recent Jobs -->
-<div class="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 animate__animated animate__fadeInUp" style="animation-delay:.2s">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="font-semibold text-lg">Recent Jobs</h2>
-    <a href="/jobs" class="text-indigo-500 text-sm hover:underline">View all</a>
+<!-- Last print + Recent jobs -->
+<div class="grid lg:grid-cols-3 gap-4">
+
+  <!-- Last print info -->
+  <div class="card p-5">
+    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Last Print</p>
+    <p class="font-mono text-sm font-semibold" id="stat-last">{{ last_print }}</p>
+    <p class="text-xs text-gray-400 mt-3">Stats refresh every 30 seconds automatically.</p>
+    <div class="mt-4 flex gap-2">
+      <a href="/jobs" class="btn-primary text-xs">View all jobs</a>
+    </div>
   </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="text-left text-gray-400 border-b dark:border-gray-700">
-          <th class="pb-2 pr-4">ID</th>
-          <th class="pb-2 pr-4">Time</th>
-          <th class="pb-2 pr-4">Sender</th>
-          <th class="pb-2 pr-4">File</th>
-          <th class="pb-2">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for job in recent %}
-        <tr class="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-          <td class="py-2 pr-4 font-mono text-xs text-gray-400">{{ job.id }}</td>
-          <td class="py-2 pr-4 text-xs">{{ job.timestamp[:19]|replace('T',' ') }}</td>
-          <td class="py-2 pr-4 truncate max-w-[160px]">{{ job.sender }}</td>
-          <td class="py-2 pr-4 truncate max-w-[160px]">{{ job.filename }}</td>
-          <td class="py-2">
-            {% if job.status == 'success' %}
-              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-xs font-semibold">success</span>
-            {% else %}
-              <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300 text-xs font-semibold">failed</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="py-6 text-center text-gray-400">No print jobs yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+  <!-- Recent jobs table -->
+  <div class="card p-5 lg:col-span-2">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-sm">Recent Jobs</h2>
+      <a href="/jobs" class="text-brand-500 hover:text-brand-600 text-xs font-medium">View all &rarr;</a>
+    </div>
+    <div class="overflow-x-auto -mx-1">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left">
+            <th class="pb-2 pr-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Time</th>
+            <th class="pb-2 pr-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Sender</th>
+            <th class="pb-2 pr-3 text-xs font-medium text-gray-400 uppercase tracking-wide">File</th>
+            <th class="pb-2 text-xs font-medium text-gray-400 uppercase tracking-wide">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          {% for job in recent %}
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <td class="py-2 pr-3 text-xs text-gray-400 whitespace-nowrap">{{ job.timestamp[:16]|replace('T',' ') }}</td>
+            <td class="py-2 pr-3 text-xs truncate max-w-[120px]">{{ job.sender }}</td>
+            <td class="py-2 pr-3 text-xs font-medium truncate max-w-[140px]">{{ job.filename }}</td>
+            <td class="py-2">
+              {% if job.status == 'success' %}
+                <span class="badge-success">ok</span>
+              {% else %}
+                <span class="badge-failed">fail</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="py-8 text-center text-gray-400 text-xs">No print jobs yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+
 </div>
+
 {% endblock %}
 {% block scripts %}
 <script>
-  // Auto-refresh stats every 30s
-  setTimeout(() => location.reload(), 30000);
+  async function refreshStats() {
+    try {
+      const data = await fetch('/api/stats').then(r => r.json());
+      document.getElementById('stat-total').textContent   = data.total;
+      document.getElementById('stat-success').textContent = data.success;
+      document.getElementById('stat-failed').textContent  = data.failed;
+      document.getElementById('stat-rate').innerHTML      = data.rate + '<span class="text-lg text-gray-400">%</span>';
+      document.getElementById('stat-last').textContent    = data.last_print;
+      document.getElementById('rate-bar').style.width     = data.rate + '%';
+    } catch(e) {}
+  }
+  setInterval(refreshStats, 30000);
 </script>
 {% endblock %}
