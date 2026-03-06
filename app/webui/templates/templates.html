@@ -71,9 +71,9 @@
       </div>
     </div>
 
-    <!-- Preview snippet -->
+    <!-- Preview snippet: | e escaped so HTML tags are shown as text, not rendered -->
     <div class="px-5 py-3 bg-gray-50 dark:bg-gray-900/50">
-      <pre class="text-xs text-gray-500 dark:text-gray-400 overflow-hidden whitespace-pre-wrap line-clamp-3">{{ previews[tpl] }}{% if previews[tpl]|length >= 400 %}...{% endif %}</pre>
+      <pre class="text-xs text-gray-500 dark:text-gray-400 overflow-hidden whitespace-pre-wrap line-clamp-3">{{ previews[tpl] | e }}{% if previews[tpl]|length >= 400 %}...{% endif %}</pre>
     </div>
 
     <!-- Inline editor (hidden by default) -->
