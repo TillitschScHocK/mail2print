@@ -92,15 +92,14 @@ async def job_history(request: Request, page: int = 1, status: str = "", sender:
 
 @app.get("/mail-templates", response_class=HTMLResponse)
 async def tmpl_manager(request: Request):
+    # previews werden nicht mehr server-seitig gerendert,
+    # sondern per JS via /mail-templates/{name}/content geladen
     tpls   = _list_print_templates()
     active = _active_template()
-    previews = {}
-    for name in tpls:
-        content = (PRINT_TPLS_DIR / name).read_text(errors="ignore")
-        previews[name] = content[:400]
     return templates.TemplateResponse("templates.html", {
         "request": request,
-        "templates": tpls, "active": active, "previews": previews,
+        "templates": tpls,
+        "active": active,
         "active_page": "templates",
     })
 
