@@ -1,17 +1,15 @@
-version: "3.8"
-
 # ══════════════════════════════════════════════════════════════════════════════
 # Stack: CUPS + Avahi (AirPrint) + mail2print
 #
 # Verzeichnisstruktur (wird automatisch angelegt):
-#   ./cups/        – CUPS-Konfiguration (/etc/cups)
+#   ./cups/        – CUPS-Konfiguration (/etc/cups im cups-Container)
 #   ./avahi/       – Avahi-Service-Dateien (/etc/avahi/services)
 #   ./mail2print/  – Daten, Logs und Templates für mail2print
 #
 # Erster Start:
-#   Das init-cups-config.sh wird automatisch als "service" (init) ausgeführt
-#   und kopiert alle Standard-CUPS-Configs in ./cups/, bevor der echte
-#   CUPS-Container hochfährt. Danach läuft alles automatisch.
+#   cups-init startet cupsd kurz im Hintergrund, wartet bis die Configs
+#   generiert wurden, kopiert sie nach ./cups/ und beendet sich dann.
+#   Erst danach startet der echte cups-Container.
 #
 # Secrets in .env ablegen und per ${VAR_NAME} referenzieren.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -19,15 +17,16 @@ version: "3.8"
 services:
 
   # ────────────────────────────────────────────────────────────────────────────
-  # Init-Container: kopiert CUPS-Defaultkonfig in ./cups/ (nur einmalig nötig)
-  # Startet, kopiert die Configs und beendet sich sofort wieder.
+  # Init-Container: generiert CUPS-Configs und kopiert sie nach ./cups/
+  # ./cups wird nach /mnt/cups-config gemountet, damit cupsd ungestört
+  # seine Configs in /etc/cups generieren kann.
   # ────────────────────────────────────────────────────────────────────────────
   cups-init:
     image: drpsychick/airprint-bridge:latest
     container_name: cups-init
     entrypoint: ["/bin/sh", "/init-cups-config.sh"]
     volumes:
-      - ./cups:/etc/cups
+      - ./cups:/mnt/cups-config
       - ./init-cups-config.sh:/init-cups-config.sh:ro
     restart: "no"
 
@@ -57,7 +56,6 @@ services:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Avahi – mDNS/Bonjour-Daemon für Druckererkennung im Netzwerk
-  # Läuft im host-Netzwerk, damit Multicast-Pakete korrekt weitergeleitet werden.
   # ────────────────────────────────────────────────────────────────────────────
   avahi:
     image: flungo/avahi:latest
@@ -71,7 +69,6 @@ services:
   # ────────────────────────────────────────────────────────────────────────────
   # mail2print – E-Mail-zu-Drucker-Dienst
   # WebUI: http://<host-ip>:635
-  # network_mode: host erlaubt direkte Kommunikation mit CUPS auf localhost:631.
   # ────────────────────────────────────────────────────────────────────────────
   mail2print:
     build:
@@ -83,40 +80,23 @@ services:
     depends_on:
       - cups
     environment:
-      # ── CUPS-Verbindung ───────────────────────────────────────────────────
-      # Bei network_mode: host reicht localhost, da CUPS auf demselben Host läuft.
       - CUPS_SERVER=localhost
-
-      # ── Drucker ──────────────────────────────────────────────────────────
-      # Muss exakt dem CUPS-Queue-Namen entsprechen (Groß-/Kleinschreibung!).
-      # Prüfen mit:  docker exec mail2print lpstat -p
       - PRINTER_NAME=${PRINTER_NAME:-Your-Printer-Queue-Name}
-
-      # ── IMAP (eingehende Mails) ──────────────────────────────────────────
       - IMAP_SERVER=${IMAP_SERVER:-imap.example.com}
       - IMAP_PORT=${IMAP_PORT:-993}
       - EMAIL_ACCOUNT=${EMAIL_ACCOUNT:-print@example.com}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD:-your-imap-password}
-
-      # ── SMTP (Bestätigungs-Mails) ─────────────────────────────────────────
       - SMTP_SERVER=${SMTP_SERVER:-smtp.example.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME:-print@example.com}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-your-smtp-password}
       - FROM_ADDRESS=${FROM_ADDRESS:-print@example.com}
       - CONFIRM_SUBJECT=${CONFIRM_SUBJECT:-Dein Druckauftrag wurde verarbeitet}
-
-      # ── Verhalten ─────────────────────────────────────────────────────────
       - SLEEP_TIME=${SLEEP_TIME:-60}
       - ALLOWED_ATTACHMENT_TYPES=${ALLOWED_ATTACHMENT_TYPES:-pdf,docx,png,jpg}
-      # Kommaseparierte Absender-Whitelist; leer = alle erlaubt
       - ALLOWED_RECIPIENTS=${ALLOWED_RECIPIENTS:-}
       - CONFIRM_TEMPLATE=${CONFIRM_TEMPLATE:-default.html}
-
-      # ── Admin-Benachrichtigung (optional) ─────────────────────────────────
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
-
-      # ── WebUI ─────────────────────────────────────────────────────────────
       - WEBUI_ENABLED=${WEBUI_ENABLED:-true}
 
     volumes:
