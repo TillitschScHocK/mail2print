@@ -12,13 +12,15 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ app/
-COPY templates/ templates/
+# Default-Templates in ein separates Verzeichnis im Image legen,
+# damit sie nicht durch das Volume-Mount überschrieben werden.
+COPY templates/ templates_default/
 COPY supervisord.conf /etc/supervisor/conf.d/mail2print.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Laufzeit-Verzeichnisse anlegen
-RUN mkdir -p /app/data /app/logs
+RUN mkdir -p /app/data /app/logs /app/templates
 
 # WebUI-Port
 EXPOSE 635

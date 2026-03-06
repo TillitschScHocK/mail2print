@@ -18,7 +18,7 @@ services:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Init-Container: generiert CUPS-Configs und kopiert sie nach ./cups/
-  # ./cups wird nach /mnt/cups-config gemountet, damit cupsd ungestört
+  # ./cups wird nach /mnt/cups-config gemountet, damit cupsd ungstört
   # seine Configs in /etc/cups generieren kann.
   # ────────────────────────────────────────────────────────────────────────────
   cups-init:
@@ -95,7 +95,7 @@ services:
       - SLEEP_TIME=${SLEEP_TIME:-60}
       - ALLOWED_ATTACHMENT_TYPES=${ALLOWED_ATTACHMENT_TYPES:-pdf,docx,png,jpg}
       - ALLOWED_RECIPIENTS=${ALLOWED_RECIPIENTS:-}
-      - CONFIRM_TEMPLATE=${CONFIRM_TEMPLATE:-default.html}
+      - CONFIRM_TEMPLATE=${CONFIRM_TEMPLATE:-default_en.html}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       - WEBUI_ENABLED=${WEBUI_ENABLED:-true}
 
