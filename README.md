@@ -1,219 +1,190 @@
-# email2Print
+# Mail2Print
 
-Send an email with an attachment → it gets printed automatically. That's it.
+Mail2Print watches an email inbox, prints supported attachments automatically through CUPS, and sends a confirmation email back to the sender.
 
-email2Print monitors an IMAP mailbox, prints every **file attachment** it finds, and sends a confirmation email back to the sender. An optional web dashboard lets you manage everything through a browser.
-
----
+It ships with a ready-to-run Docker Compose stack that includes CUPS, Avahi for AirPrint service publishing, and the Mail2Print app with an optional web interface.
 
 ## Features
 
-- 📧 Monitors an IMAP inbox and prints new attachments automatically
-- 🖨️ Prints **attachments only** — the email body is never sent to the printer
-- ✅ Sends a styled **confirmation email** to the sender after each job
-- ❌ On failure, the sender gets a simple error notice; the admin gets a detailed report
-- 📊 Every print job is logged to `data/jobs.json`
-- 🌐 Optional **Admin WebUI** on port `635`:
-  - Dashboard with live statistics
-  - Full job history with filtering
-  - Template manager (switch templates without restarting)
-  - Real-time log viewer
-  - Settings & printer status page
-- 🌙 Dark / Light mode
-- 🐳 Runs as a single Docker container alongside CUPS
+- Monitor an IMAP inbox for new emails.
+- Print supported file attachments automatically.
+- Send a confirmation email after each processed print job.
+- Store job history and logs in persistent local folders.
+- Manage the app through the built-in web UI.
+- Run the full stack with Docker Compose.
 
----
+## Included services
+
+The included `docker-compose.yml` starts these services:
+
+- `cups-init`: Creates the initial CUPS configuration in `./cups` on first start.
+- `cups`: Runs the CUPS print server with the web interface enabled.
+- `avahi`: Publishes printer services on the local network for discovery.
+- `mail2print`: Connects to your mailbox, processes attachments, and starts the web UI.
 
 ## Requirements
 
-- Docker & Docker Compose
-- A running **CUPS** server (the included `docker-compose.yml` sets one up for you)
-- A dedicated email address for the print service (e.g. a Gmail account with an App Password)
+Before you start, make sure you have:
 
----
+- Docker
+- Docker Compose plugin (`docker compose`)
+- A Linux host that can use `network_mode: host`
+- A printer that can be added to CUPS
+- A dedicated email inbox for Mail2Print
 
-## Setup
+## Quick start
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/TillitschScHocK/email2Print.git
-cd email2Print
+git clone https://github.com/TillitschScHocK/mail2print.git
+cd mail2print
 ```
 
-### 2. Prepare the CUPS config directory
+### 2. Create your environment file
 
-The CUPS container needs its config files to already exist on the host before it starts.
-Run this **once** to generate the default config:
+Copy the example file and edit it:
 
 ```bash
-mkdir -p /your/path/cups-config
-
-# Start a temporary CUPS container without any volume mounts
-docker run -d --name cups-init \
-  --privileged --network host \
-  drpsychick/airprint-bridge:latest
-
-sleep 5
-
-# Copy the generated config files to your host directory
-docker cp cups-init:/etc/cups/. /your/path/cups-config/
-
-# Remove the temporary container
-docker rm -f cups-init
+cp .env.example .env
 ```
 
-Then set the correct permissions:
+At minimum, set these values in `.env`:
+
+- `PRINTER_NAME`
+- `IMAP_SERVER`
+- `EMAIL_ACCOUNT`
+- `EMAIL_PASSWORD`
+- `SMTP_SERVER`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+
+You can keep the other values as they are for the first start.
+
+### 3. Start the stack
 
 ```bash
-chmod 644 /your/path/cups-config/*.conf
-chmod 755 /your/path/cups-config
-chown -R root:root /your/path/cups-config
+docker compose up -d --build
 ```
 
-### 3. Configure `docker-compose.yml`
+On the first start, the `cups-init` service prepares the CUPS configuration automatically. After that, the regular services continue running in the background.
 
-Edit `docker-compose.yml` and replace the placeholder values:
+### 4. Open CUPS and add your printer
 
-| Placeholder | Replace with |
-|---|---|
-| `/your/path/cups-config` | Absolute path to your CUPS config directory |
-| `/your/path/avahi` | Absolute path to your Avahi services directory |
-| `Your-Printer-Queue-Name` | Your CUPS printer queue name (see step 5) |
-| `imap.example.com` | Your IMAP server |
-| `print@example.com` | Your mailbox address |
-| `smtp.example.com` | Your SMTP server |
+Open the CUPS web interface in your browser:
 
-### 4. Start the stack
+```text
+http://<your-server-ip>:631
+```
+
+Log in with the values from:
+
+- `CUPS_ADMIN_USER`
+- `CUPS_ADMIN_PASSWORD`
+
+Add your printer in CUPS, note the exact queue name, and set that value as `PRINTER_NAME` in `.env`.
+
+If you changed `.env`, restart the app:
 
 ```bash
-docker-compose up -d --build
+docker compose up -d
 ```
 
-### 5. Find your printer queue name
+### 5. Open the Mail2Print web UI
 
-```bash
-docker exec email2print lpstat -p
-```
+After the stack is running, open:
 
-Example output:
-```
-printer Epson-ET2820-USB is idle.  enabled since ...
-```
-
-Copy the name (`Epson-ET2820-USB`) and set it as `PRINTER_NAME` in `docker-compose.yml`, then restart:
-
-```bash
-docker-compose up -d
-```
-
-### 6. Open the Admin WebUI
-
-```
+```text
 http://<your-server-ip>:635
 ```
 
----
+The web UI provides job history, logs, templates, and status information.
 
-## How CUPS networking works
+## Folder structure
 
-Both containers use `network_mode: host`. This means they share the host's network stack and `lp`/`lpstat` inside the email2print container connect directly to `localhost:631` where CUPS is listening. This avoids IPP version negotiation errors that occur with bridge networking.
+These folders are used automatically and are created locally next to the Compose file:
 
-> **Troubleshooting `lpstat: Error - add '/version=1.1' to server name`**
-> This error means the container is using bridge networking instead of host networking.
-> Make sure both services have `network_mode: host` in `docker-compose.yml`.
+- `./cups` for persistent CUPS configuration
+- `./avahi` for Avahi service definitions
+- `./mail2print/templates` for custom confirmation templates
+- `./mail2print/data` for job history and runtime data
+- `./mail2print/logs` for application and web UI logs
 
-> **Troubleshooting `lp: Error - The printer or class does not exist.`**
-> The `PRINTER_NAME` value does not match the CUPS queue name.
-> Run `docker exec email2print lpstat -p` to see the exact name.
+## Environment variables
 
-> **Troubleshooting `sed: can't read /etc/cups/cups-files.conf`**
-> The CUPS config directory is empty or has wrong permissions.
-> Follow step 2 above to initialise it correctly.
+Copy `.env.example` to `.env` and adjust the values for your environment.
 
----
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `IMAP_SERVER` | ✅ | — | IMAP server hostname |
-| `IMAP_PORT` | | `993` | IMAP SSL port |
-| `EMAIL_ACCOUNT` | ✅ | — | Email address to monitor |
-| `EMAIL_PASSWORD` | ✅ | — | Password or App Password |
-| `SMTP_SERVER` | ✅ | — | SMTP server for confirmation emails |
-| `SMTP_PORT` | | `587` | SMTP port (STARTTLS) |
-| `SMTP_USERNAME` | | `EMAIL_ACCOUNT` | SMTP login username |
-| `SMTP_PASSWORD` | | `EMAIL_PASSWORD` | SMTP password |
-| `FROM_ADDRESS` | | `EMAIL_ACCOUNT` | Sender address for outgoing emails |
-| `PRINTER_NAME` | ✅ | — | CUPS queue name — must match `lpstat -p` exactly |
-| `SLEEP_TIME` | | `60` | How often to check for new emails (seconds) |
-| `ALLOWED_ATTACHMENT_TYPES` | | `pdf,png,jpg,jpeg,docx` | Allowed file extensions (comma-separated) |
-| `ALLOWED_RECIPIENTS` | | *(all)* | Only process emails from these addresses (comma-separated); leave empty to allow everyone |
-| `CONFIRM_TEMPLATE` | | `default.html` | Template file from `templates/` for confirmation emails |
-| `CONFIRM_SUBJECT` | | `Your Print Job Confirmation` | Subject line prefix for confirmation emails |
-| `ADMIN_EMAIL` | | — | Receives a detailed error report on every failed print job |
-| `WEBUI_ENABLED` | | `true` | Set to `false` to disable the web interface |
-
----
-
-## Confirmation Email Templates
-
-Templates are located in the `templates/` folder and use [Jinja2](https://jinja.palletsprojects.com/) syntax.
-You can switch the active template at any time from the **Templates** page in the WebUI — no restart needed.
-
-### Available variables
-
-| Variable | Description |
-|---|---|
-| `{{ sender }}` | Email address of the person who sent the file |
-| `{{ filename }}` | Name of the printed file |
-| `{{ printer }}` | CUPS queue name |
-| `{{ timestamp }}` | Date and time of the job |
-| `{{ job_id }}` | Short unique job ID |
-| `{{ status }}` | `success` or `failed` |
-
-### Included templates
-
-| Template | Description |
-|---|---|
-| `default.html` | Clean white card layout |
-| `fancy.html` | Gradient design with large status icon |
-
----
-
-## Volumes
-
-| Host path | Container path | Purpose |
+| Variable | Default | Description |
 |---|---|---|
-| `./email2Print/templates` | `/app/templates` | Confirmation email templates |
-| `./email2Print/data` | `/app/data` | Print job log (`jobs.json`) |
-| `./email2Print/logs` | `/app/logs` | Application log (`email2print.log`) |
-| `/your/path/cups-config` | `/etc/cups` | CUPS configuration (read/write) |
-| `/your/path/avahi` | `/etc/avahi/services` | Avahi AirPrint service files (read-only) |
+| `CUPS_ADMIN_USER` | `admin` | CUPS administrator username |
+| `CUPS_ADMIN_PASSWORD` | `changeme` | CUPS administrator password |
+| `PRINTER_NAME` | `Your-Printer-Queue-Name` | Exact CUPS printer queue name |
+| `IMAP_SERVER` | `imap.example.com` | IMAP server hostname |
+| `IMAP_PORT` | `993` | IMAP port |
+| `EMAIL_ACCOUNT` | `print@example.com` | Mailbox address to monitor |
+| `EMAIL_PASSWORD` | `your-imap-password` | IMAP password or app password |
+| `SMTP_SERVER` | `smtp.example.com` | SMTP server hostname |
+| `SMTP_PORT` | `587` | SMTP port |
+| `SMTP_USERNAME` | `print@example.com` | SMTP username |
+| `SMTP_PASSWORD` | `your-smtp-password` | SMTP password |
+| `FROM_ADDRESS` | `print@example.com` | Sender address for confirmation emails |
+| `CONFIRM_SUBJECT` | `Your print job was processed` | Subject line for confirmation emails |
+| `SLEEP_TIME` | `60` | Poll interval in seconds |
+| `ALLOWED_ATTACHMENT_TYPES` | `pdf,docx,png,jpg` | Allowed attachment extensions |
+| `ALLOWED_RECIPIENTS` | empty | Optional comma-separated sender allowlist |
+| `CONFIRM_TEMPLATE` | `default_en.j2` | Confirmation template filename |
+| `ADMIN_EMAIL` | empty | Optional email address for detailed failure notifications |
+| `WEBUI_ENABLED` | `true` | Enable or disable the web UI |
 
----
+## Templates
 
-## Project Structure
+Mail2Print uses confirmation templates stored in `./mail2print/templates`.
 
+- Template files use the `.j2` extension for HTML templates.
+- Plain text templates with `.txt` can also be included.
+- On first start, default templates are copied into the templates folder automatically if they do not already exist.
+
+If you want to customize the confirmation email, edit the template files in `./mail2print/templates`.
+
+## Updating
+
+To update the project:
+
+```bash
+git pull
+docker compose up -d --build
 ```
-email2Print/
-├── app/
-│   ├── main.py               # IMAP polling loop
-│   ├── printer.py            # CUPS printing via lp
-│   ├── mailer.py             # SMTP confirmation + admin alert
-│   ├── templates_engine.py   # Jinja2 template renderer
-│   └── webui/
-│       ├── server.py         # FastAPI web server
-│       └── templates/        # WebUI HTML pages
-├── templates/                # Confirmation email templates
-├── data/                     # Auto-created: jobs.json
-├── logs/                     # Auto-created: email2print.log
-├── entrypoint.sh             # Container startup script
-├── supervisord.conf          # Manages IMAP poller + WebUI processes
-├── Dockerfile
-├── docker-compose.yml
-└── requirements.txt
+
+## Troubleshooting
+
+### The printer does not print
+
+Check whether the printer exists in CUPS and whether `PRINTER_NAME` matches the queue name exactly.
+
+Open CUPS in the browser or inspect the printer list inside the running environment:
+
+```bash
+docker exec cups lpstat -p
 ```
 
-The IMAP poller and the WebUI run in the **same container**, managed by **supervisord**.
+### The web UI does not open
+
+Make sure port `635` is reachable on your host and that the `mail2print` container is running.
+
+```bash
+docker compose ps
+```
+
+### Mail login fails
+
+Re-check your IMAP and SMTP credentials in `.env`. For providers such as Gmail, an app password may be required.
+
+### I changed templates or settings
+
+Most environment changes require recreating the container:
+
+```bash
+docker compose up -d --build
+```
+
+Templates stored in `./mail2print/templates` stay persistent across restarts.
