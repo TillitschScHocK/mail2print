@@ -142,6 +142,7 @@
 
 {% endblock %}
 {% block scripts %}
+{% raw %}
 <script>
 const editors = {};
 
@@ -199,7 +200,7 @@ function previewTemplate(name) {
     .replace(/\{\{\s*status\s*\}\}/g, 'success')
     .replace(/\{\{\s*job_id\s*\}\}/g, 'abc-123-def')
     .replace(/\{\{\s*timestamp\[.*?\].*?\}\}/g, '2025-01-01 12:00:00')
-    .replace(/\{%[\s\S]*?%\}/g, '');
+    .replace(/{%[\s\S]*?%}/g, '');
   const iframe = document.getElementById('preview-iframe');
   iframe.srcdoc = content;
   document.getElementById('preview-modal').classList.remove('hidden');
@@ -241,7 +242,7 @@ function closeNewModal() { document.getElementById('new-modal').classList.add('h
 const LANG_PRESETS = {
   en: async () => { try { const r = await fetch('/templates/default_en.html/content'); return (await r.json()).content; } catch { return '<!-- English template -->\n'; } },
   de: async () => { try { const r = await fetch('/templates/default_de.html/content'); return (await r.json()).content; } catch { return '<!-- Deutsches Template -->\n'; } },
-  es: async () => { try { const r = await fetch('/templates/default_es.html/content'); return (await r.json()).content; } catch { return '<!-- Plantilla en Español -->\n'; } },
+  es: async () => { try { const r = await fetch('/templates/default_es.html/content'); return (await r.json()).content; } catch { return '<!-- Plantilla en Espa\u00f1ol -->\n'; } },
   blank: async () => '<!-- New template -->\n'
 };
 
@@ -268,4 +269,5 @@ function showToast(msg, type) {
   setTimeout(() => t.remove(), 3000);
 }
 </script>
+{% endraw %}
 {% endblock %}

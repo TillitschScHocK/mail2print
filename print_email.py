@@ -9,6 +9,8 @@ import time
 import re
 from email.message import EmailMessage
 from email.header import decode_header
+from pathlib import Path
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 import io
 
 # Logging setup
@@ -54,6 +56,42 @@ ALLOWED_ATTACHMENT_TYPES = [ext.strip().lower() for ext in get_env_var("ALLOWED_
 ALLOWED_RECIPIENTS = [addr.strip().lower() for addr in get_env_var("ALLOWED_RECIPIENTS", default="").split(",") if addr]
 DETAILED_CONFIRMATION = get_env_var("DETAILED_CONFIRMATION", default="false").lower() == "true"
 
+PRINT_TPLS_DIR  = Path("/app/templates")
+ACTIVE_TPL_FILE = Path("/app/data/active_template.txt")
+
+
+def _active_template():
+    if ACTIVE_TPL_FILE.exists():
+        t = ACTIVE_TPL_FILE.read_text().strip()
+        if t:
+            return t
+    return get_env_var("CONFIRM_TEMPLATE", default="default_en.html")
+
+
+def _render_confirmation(filename, printer, sender, status, job_id):
+    """Render the active HTML confirmation template with Jinja2.
+    Falls back to plain text if no template file exists."""
+    active = _active_template()
+    tpl_path = PRINT_TPLS_DIR / active
+    if tpl_path.exists():
+        try:
+            env = Environment(loader=FileSystemLoader(str(PRINT_TPLS_DIR)))
+            tpl = env.get_template(active)
+            return tpl.render(
+                filename=filename,
+                printer=printer,
+                sender=sender,
+                status=status,
+                job_id=job_id,
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+            ), True
+        except TemplateNotFound:
+            logger.warning(f"Template '{active}' not found, falling back to plain text.")
+    logger.warning(f"No template file at {tpl_path}, sending plain text confirmation.")
+    lines = [f"{time.strftime('%Y-%m-%d %H:%M:%S')} - '{filename}' was printed on '{printer}'"]
+    return "\n".join(lines), False
+
+
 def decode_mime_words(s):
     if not s:
         return ""
@@ -83,12 +121,23 @@ def send_confirmation_email(to_email, log_text, printed_files):
 
     if DETAILED_CONFIRMATION:
         msg.set_content(f"Your print job was processed:\n\n{log_text}")
+    elif printed_files:
+        # Use the first printed file for the template context
+        first_file = printed_files[0]
+        body, is_html = _render_confirmation(
+            filename=first_file,
+            printer=PRINTER_NAME,
+            sender=to_email,
+            status="success",
+            job_id=f"{int(time.time())}",
+        )
+        if is_html:
+            msg.set_content("Your print job was processed.")  # plain text fallback
+            msg.add_alternative(body, subtype="html")
+        else:
+            msg.set_content(body)
     else:
-        lines = [
-            f"{time.strftime('%Y-%m-%d %H:%M:%S')} – Your file '{fname}' was printed on printer '{PRINTER_NAME}'"
-            for fname in printed_files
-        ]
-        msg.set_content("\n".join(lines) if lines else "No files were printed.")
+        msg.set_content("No files were printed.")
 
     try:
         logger.info(f"Sending confirmation email to {to_email}")
