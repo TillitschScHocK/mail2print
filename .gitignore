@@ -1,37 +1,30 @@
+# ── Laufzeit-Daten (werden beim ersten Start automatisch befüllt) ──
+cups/
+avahi/
+mail2print/data/
+mail2print/logs/
 
-# Byte-compiled / optimized / DLL files
+# Templates werden versioniert, Laufzeit-Overrides nicht
+# mail2print/templates/   <- absichtlich NICHT ignoriert
+
+# ── Secrets ──
+.env
+
+# ── Python ──
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
 
-# Environment variables
-.env
-.env.*
-
-# Logs and debug
+# ── Docker ──
 *.log
 
-# Virtual environment
-venv/
-env/
-
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-
-# Docker
-*.pid
-*.tar
-*.bak
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# VSCode or IDE settings
+# ── Editoren ──
 .vscode/
 .idea/
-
-# Old revisions of the script
-print_email.py.v*
+*.swp
+*.swo

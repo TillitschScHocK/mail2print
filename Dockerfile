@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Install CUPS client tools and supervisord
+# CUPS-Client-Tools und supervisord installieren
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cups-client \
     supervisor \
@@ -13,14 +13,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ app/
 COPY templates/ templates/
-COPY supervisord.conf /etc/supervisor/conf.d/email2print.conf
+COPY supervisord.conf /etc/supervisor/conf.d/mail2print.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Ensure runtime directories exist
+# Laufzeit-Verzeichnisse anlegen
 RUN mkdir -p /app/data /app/logs
 
-# WebUI port
+# WebUI-Port
 EXPOSE 635
 
 CMD ["/entrypoint.sh"]

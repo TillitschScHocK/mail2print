@@ -1,30 +1,40 @@
 version: "3.8"
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Unified stack: CUPS AirPrint bridge + email2Print
-# ══════════════════════════════════════════════════════════════════════════════
+# Stack: CUPS + Avahi (AirPrint) + mail2print
 #
-# FIRST-TIME SETUP for CUPS config volume:
-#   If /your/path/cups-config/ is empty, start CUPS without the volume first
-#   so it can generate its default config files, then stop it, copy the
-#   generated files into the host directory, and restart with the volume.
+# Verzeichnisstruktur (wird automatisch angelegt):
+#   ./cups/        – CUPS-Konfiguration (/etc/cups)
+#   ./avahi/       – Avahi-Service-Dateien (/etc/avahi/services)
+#   ./mail2print/  – Daten, Logs und Templates für mail2print
 #
-#     docker run --rm --name cups-init \
-#       drpsychick/airprint-bridge:latest sleep 5
-#     docker cp cups-init:/etc/cups/. /your/path/cups-config/
+# Erster Start:
+#   Das init-cups-config.sh wird automatisch als "service" (init) ausgeführt
+#   und kopiert alle Standard-CUPS-Configs in ./cups/, bevor der echte
+#   CUPS-Container hochfährt. Danach läuft alles automatisch.
 #
-#   After that, docker-compose up works normally.
-#
-# Tip: store secrets in a .env file next to this file and reference them
-# with ${VAR_NAME} syntax. Add .env to your .gitignore!
+# Secrets in .env ablegen und per ${VAR_NAME} referenzieren.
 # ══════════════════════════════════════════════════════════════════════════════
 
 services:
 
   # ────────────────────────────────────────────────────────────────────────────
-  # CUPS / AirPrint bridge
-  # network_mode: host is required for USB printer access and mDNS (Avahi).
-  # CUPS web interface: http://<host-ip>:631
+  # Init-Container: kopiert CUPS-Defaultkonfig in ./cups/ (nur einmalig nötig)
+  # Startet, kopiert die Configs und beendet sich sofort wieder.
+  # ────────────────────────────────────────────────────────────────────────────
+  cups-init:
+    image: drpsychick/airprint-bridge:latest
+    container_name: cups-init
+    entrypoint: ["/bin/sh", "/init-cups-config.sh"]
+    volumes:
+      - ./cups:/etc/cups
+      - ./init-cups-config.sh:/init-cups-config.sh:ro
+    restart: "no"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # CUPS / AirPrint-Bridge
+  # Webinterface: http://<host-ip>:631
+  # network_mode: host ist notwendig für USB-Drucker und mDNS (Avahi).
   # ────────────────────────────────────────────────────────────────────────────
   cups:
     image: drpsychick/airprint-bridge:latest
@@ -32,74 +42,84 @@ services:
     restart: unless-stopped
     network_mode: host
     privileged: true
+    depends_on:
+      cups-init:
+        condition: service_completed_successfully
     environment:
       - CUPS_WEBINTERFACE=yes
       - CUPS_REMOTE_ADMIN=yes
-      - CUPS_ADMIN_USER=admin
-      - CUPS_ADMIN_PASSWORD=changeme
+      - CUPS_ADMIN_USER=${CUPS_ADMIN_USER:-admin}
+      - CUPS_ADMIN_PASSWORD=${CUPS_ADMIN_PASSWORD:-changeme}
     volumes:
-      # Mount the full CUPS config directory.
-      # The host directory MUST already contain valid CUPS config files
-      # (especially cups-files.conf). See FIRST-TIME SETUP note above.
-      - /your/path/cups-config:/etc/cups
-      # Mount Avahi service file(s) for AirPrint discovery.
-      # Adjust the filename to match your printer.
-      - /your/path/avahi:/etc/avahi/services
+      - ./cups:/etc/cups
+      - ./avahi:/etc/avahi/services
       - /var/run/dbus:/var/run/dbus
 
   # ────────────────────────────────────────────────────────────────────────────
-  # email2Print
-  # network_mode: host shares the host network stack with the CUPS container,
-  # so lp/lpstat connect to localhost:631 directly without any IPP version
-  # negotiation errors.
-  # WebUI is available at http://<host-ip>:635
+  # Avahi – mDNS/Bonjour-Daemon für Druckererkennung im Netzwerk
+  # Läuft im host-Netzwerk, damit Multicast-Pakete korrekt weitergeleitet werden.
   # ────────────────────────────────────────────────────────────────────────────
-  email2print:
-    build:
-      context: ./email2Print
-    container_name: email2print
+  avahi:
+    image: flungo/avahi:latest
+    container_name: avahi
     restart: unless-stopped
     network_mode: host
-    environment:
-      # ── Printer ────────────────────────────────────────────────────────────
-      # Must match the CUPS queue name exactly (case-sensitive).
-      # Verify with:  docker exec email2print lpstat -p
-      - PRINTER_NAME=Your-Printer-Queue-Name
-
-      # ── IMAP (incoming mail) ─────────────────────────────────────────────
-      - IMAP_SERVER=imap.example.com
-      - IMAP_PORT=993
-      - EMAIL_ACCOUNT=print@example.com
-      - EMAIL_PASSWORD=your-imap-password
-
-      # ── SMTP (outgoing confirmations) ─────────────────────────────────────
-      - SMTP_SERVER=smtp.example.com
-      - SMTP_PORT=587
-      - SMTP_USERNAME=print@example.com
-      - SMTP_PASSWORD=your-smtp-password
-      - FROM_ADDRESS=print@example.com
-      - CONFIRM_SUBJECT=Your print job has been processed
-
-      # ── Behaviour ──────────────────────────────────────────────────────────
-      - SLEEP_TIME=60
-      - ALLOWED_ATTACHMENT_TYPES=pdf,docx,png,jpg
-      # Comma-separated allowed sender addresses; leave empty to allow all
-      - ALLOWED_RECIPIENTS=user1@example.com,user2@example.com
-      - CONFIRM_TEMPLATE=default.html
-
-      # ── Admin alert (optional) ────────────────────────────────────────────
-      # If set, receives a detailed error report on every failed print job.
-      - ADMIN_EMAIL=admin@example.com
-
-      # ── WebUI (optional) ──────────────────────────────────────────────────
-      # Set to 'false' to disable the web interface entirely.
-      # With network_mode: host the WebUI is accessible on port 635 of the host.
-      - WEBUI_ENABLED=true
-
     volumes:
-      - ./email2Print/templates:/app/templates
-      - ./email2Print/data:/app/data
-      - ./email2Print/logs:/app/logs
+      - ./avahi:/etc/avahi/services
+      - /var/run/dbus:/var/run/dbus
 
+  # ────────────────────────────────────────────────────────────────────────────
+  # mail2print – E-Mail-zu-Drucker-Dienst
+  # WebUI: http://<host-ip>:635
+  # network_mode: host erlaubt direkte Kommunikation mit CUPS auf localhost:631.
+  # ────────────────────────────────────────────────────────────────────────────
+  mail2print:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mail2print
+    restart: unless-stopped
+    network_mode: host
     depends_on:
       - cups
+    environment:
+      # ── CUPS-Verbindung ───────────────────────────────────────────────────
+      # Bei network_mode: host reicht localhost, da CUPS auf demselben Host läuft.
+      - CUPS_SERVER=localhost
+
+      # ── Drucker ──────────────────────────────────────────────────────────
+      # Muss exakt dem CUPS-Queue-Namen entsprechen (Groß-/Kleinschreibung!).
+      # Prüfen mit:  docker exec mail2print lpstat -p
+      - PRINTER_NAME=${PRINTER_NAME:-Your-Printer-Queue-Name}
+
+      # ── IMAP (eingehende Mails) ──────────────────────────────────────────
+      - IMAP_SERVER=${IMAP_SERVER:-imap.example.com}
+      - IMAP_PORT=${IMAP_PORT:-993}
+      - EMAIL_ACCOUNT=${EMAIL_ACCOUNT:-print@example.com}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD:-your-imap-password}
+
+      # ── SMTP (Bestätigungs-Mails) ─────────────────────────────────────────
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.example.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-print@example.com}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-your-smtp-password}
+      - FROM_ADDRESS=${FROM_ADDRESS:-print@example.com}
+      - CONFIRM_SUBJECT=${CONFIRM_SUBJECT:-Dein Druckauftrag wurde verarbeitet}
+
+      # ── Verhalten ─────────────────────────────────────────────────────────
+      - SLEEP_TIME=${SLEEP_TIME:-60}
+      - ALLOWED_ATTACHMENT_TYPES=${ALLOWED_ATTACHMENT_TYPES:-pdf,docx,png,jpg}
+      # Kommaseparierte Absender-Whitelist; leer = alle erlaubt
+      - ALLOWED_RECIPIENTS=${ALLOWED_RECIPIENTS:-}
+      - CONFIRM_TEMPLATE=${CONFIRM_TEMPLATE:-default.html}
+
+      # ── Admin-Benachrichtigung (optional) ─────────────────────────────────
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+
+      # ── WebUI ─────────────────────────────────────────────────────────────
+      - WEBUI_ENABLED=${WEBUI_ENABLED:-true}
+
+    volumes:
+      - ./mail2print/templates:/app/templates
+      - ./mail2print/data:/app/data
+      - ./mail2print/logs:/app/logs
