@@ -27,7 +27,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(UI_TEMPLATES))
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ── Helpers ────────────────────────────────────────────────────────────────────────────
 
 def _load_jobs():
     if not JOBS_FILE.exists():
@@ -52,7 +52,7 @@ def _list_print_templates():
     return [f.name for f in sorted(PRINT_TPLS_DIR.iterdir()) if f.is_file() and f.suffix in (".html", ".txt")]
 
 
-# ── Routes ───────────────────────────────────────────────────────────────────
+# ── Routes ───────────────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -90,7 +90,7 @@ async def job_history(request: Request, page: int = 1, status: str = "", sender:
     })
 
 
-@app.get("/templates", response_class=HTMLResponse)
+@app.get("/mail-templates", response_class=HTMLResponse)
 async def tmpl_manager(request: Request):
     tpls   = _list_print_templates()
     active = _active_template()
@@ -105,7 +105,7 @@ async def tmpl_manager(request: Request):
     })
 
 
-@app.post("/templates/activate/{name}")
+@app.post("/mail-templates/activate/{name}")
 async def activate_template(name: str):
     allowed = _list_print_templates()
     if name not in allowed:
@@ -115,7 +115,7 @@ async def activate_template(name: str):
     return JSONResponse({"ok": True, "active": name})
 
 
-@app.get("/templates/{name}/content")
+@app.get("/mail-templates/{name}/content")
 async def get_template_content(name: str):
     path = PRINT_TPLS_DIR / name
     if not path.exists() or not path.is_file():
@@ -127,9 +127,8 @@ class SavePayload(BaseModel):
     content: str
 
 
-@app.put("/templates/{name}/save")
+@app.put("/mail-templates/{name}/save")
 async def save_template(name: str, payload: SavePayload):
-    # Prevent path traversal
     path = (PRINT_TPLS_DIR / name).resolve()
     if not str(path).startswith(str(PRINT_TPLS_DIR.resolve())):
         return JSONResponse({"error": "Invalid path"}, status_code=400)
@@ -143,7 +142,7 @@ class NewTemplatePayload(BaseModel):
     content: str = ""
 
 
-@app.post("/templates/new")
+@app.post("/mail-templates/new")
 async def create_template(payload: NewTemplatePayload):
     name = payload.name.strip()
     if not name.endswith(".html"):
@@ -158,7 +157,7 @@ async def create_template(payload: NewTemplatePayload):
     return JSONResponse({"ok": True, "name": name})
 
 
-@app.delete("/templates/{name}")
+@app.delete("/mail-templates/{name}")
 async def delete_template(name: str):
     allowed = _list_print_templates()
     if name not in allowed:

@@ -144,6 +144,7 @@
 {% block scripts %}
 {% raw %}
 <script>
+const BASE = '/mail-templates';
 const editors = {};
 
 async function openEditor(name) {
@@ -152,7 +153,7 @@ async function openEditor(name) {
   document.getElementById('edit-btn-' + name).textContent = '...';
 
   if (!editors[name]) {
-    const res  = await fetch('/templates/' + encodeURIComponent(name) + '/content');
+    const res  = await fetch(BASE + '/' + encodeURIComponent(name) + '/content');
     const data = await res.json();
     const ta   = document.getElementById('ta-' + name);
     const cm   = CodeMirror.fromTextArea(ta, {
@@ -178,7 +179,7 @@ function closeEditor(name) {
 async function saveTemplate(name) {
   const cm = editors[name];
   if (!cm) return;
-  const res = await fetch('/templates/' + encodeURIComponent(name) + '/save', {
+  const res = await fetch(BASE + '/' + encodeURIComponent(name) + '/save', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: cm.getValue() })
@@ -211,14 +212,14 @@ function closePreview() {
 }
 
 async function activateTemplate(name) {
-  const res = await fetch('/templates/activate/' + encodeURIComponent(name), { method: 'POST' });
+  const res = await fetch(BASE + '/activate/' + encodeURIComponent(name), { method: 'POST' });
   if (res.ok) location.reload();
   else showToast('Failed to activate.', 'error');
 }
 
 async function deleteTemplate(name) {
   if (!confirm('Delete template "' + name + '"?')) return;
-  const res = await fetch('/templates/' + encodeURIComponent(name), { method: 'DELETE' });
+  const res = await fetch(BASE + '/' + encodeURIComponent(name), { method: 'DELETE' });
   if (res.ok) location.reload();
   else {
     const d = await res.json();
@@ -240,9 +241,9 @@ function openNewModal()  { document.getElementById('new-modal').classList.remove
 function closeNewModal() { document.getElementById('new-modal').classList.add('hidden'); }
 
 const LANG_PRESETS = {
-  en: async () => { try { const r = await fetch('/templates/default_en.html/content'); return (await r.json()).content; } catch { return '<!-- English template -->\n'; } },
-  de: async () => { try { const r = await fetch('/templates/default_de.html/content'); return (await r.json()).content; } catch { return '<!-- Deutsches Template -->\n'; } },
-  es: async () => { try { const r = await fetch('/templates/default_es.html/content'); return (await r.json()).content; } catch { return '<!-- Plantilla en Espa\u00f1ol -->\n'; } },
+  en: async () => { try { const r = await fetch(BASE + '/default_en.html/content'); return (await r.json()).content; } catch { return '<!-- English template -->\n'; } },
+  de: async () => { try { const r = await fetch(BASE + '/default_de.html/content'); return (await r.json()).content; } catch { return '<!-- Deutsches Template -->\n'; } },
+  es: async () => { try { const r = await fetch(BASE + '/default_es.html/content'); return (await r.json()).content; } catch { return '<!-- Plantilla en Espa\u00f1ol -->\n'; } },
   blank: async () => '<!-- New template -->\n'
 };
 
@@ -251,7 +252,7 @@ async function createTemplate() {
   const lang = document.getElementById('new-tpl-lang').value;
   if (!name) { showToast('Please enter a name.', 'error'); return; }
   const content = await LANG_PRESETS[lang]();
-  const res = await fetch('/templates/new', {
+  const res = await fetch(BASE + '/new', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, content })
