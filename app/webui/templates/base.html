@@ -35,38 +35,134 @@
       }
     }
   </script>
-  <style type="text/tailwindcss">
-    @layer components {
-      .nav-link {
-        @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-               text-indigo-200 hover:text-white hover:bg-white/10
-               transition-all duration-150 cursor-pointer;
-      }
-      .nav-link.active {
-        @apply bg-white/15 text-white font-semibold;
-      }
-      .card {
-        @apply bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800;
-      }
-      .btn-primary {
-        @apply inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 active:bg-brand-800
-               text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-150
-               focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
-      }
-      .btn-ghost {
-        @apply inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl
-               text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800
-               transition-all duration-150;
-      }
-      .input {
-        @apply rounded-xl border border-gray-200 dark:border-gray-700
-               bg-white dark:bg-gray-900 text-sm px-3 py-2
-               focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-               placeholder-gray-400 dark:placeholder-gray-500 transition;
-      }
-      .badge-success { @apply px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 text-xs font-semibold; }
-      .badge-failed  { @apply px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 text-xs font-semibold; }
-      .badge-active  { @apply px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 text-xs font-semibold; }
+  <style>
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 0.75rem;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: rgb(199 210 254);
+      transition: all 150ms;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .nav-link:hover {
+      color: white;
+      background: rgb(255 255 255 / 0.10);
+    }
+    .nav-link.active {
+      background: rgb(255 255 255 / 0.15);
+      color: white;
+      font-weight: 600;
+    }
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / .07), 0 1px 2px -1px rgb(0 0 0 / .07);
+      border: 1px solid rgb(243 244 246);
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: rgb(79 70 229);
+      color: white;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      transition: all 150ms;
+      border: 0;
+      text-decoration: none;
+    }
+    .btn-primary:hover {
+      background: rgb(67 56 202);
+    }
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.75rem;
+      color: rgb(107 114 128);
+      transition: all 150ms;
+      border: 0;
+      background: transparent;
+      text-decoration: none;
+    }
+    .btn-ghost:hover {
+      background: rgb(243 244 246);
+    }
+    .input {
+      border-radius: 0.75rem;
+      border: 1px solid rgb(229 231 235);
+      background: white;
+      color: rgb(17 24 39);
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      transition: all 150ms;
+    }
+    .input:focus {
+      outline: 2px solid rgb(99 102 241);
+      outline-offset: 1px;
+      border-color: transparent;
+    }
+    .badge-success,
+    .badge-failed,
+    .badge-active {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 0.125rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-success {
+      background: rgb(209 250 229);
+      color: rgb(4 120 87);
+    }
+    .badge-failed {
+      background: rgb(255 228 230);
+      color: rgb(190 24 93);
+    }
+    .badge-active {
+      background: rgb(224 231 255);
+      color: rgb(67 56 202);
+    }
+    .shadow-card-lg {
+      box-shadow: 0 4px 16px -2px rgb(0 0 0 / .1), 0 2px 6px -2px rgb(0 0 0 / .06);
+    }
+    html.dark .card {
+      background: rgb(17 24 39);
+      border-color: rgb(31 41 55);
+    }
+    html.dark .btn-ghost {
+      color: rgb(156 163 175);
+    }
+    html.dark .btn-ghost:hover {
+      background: rgb(31 41 55);
+    }
+    html.dark .input {
+      border-color: rgb(55 65 81);
+      background: rgb(17 24 39);
+      color: rgb(243 244 246);
+    }
+    html.dark .badge-success {
+      background: rgb(6 78 59 / 0.5);
+      color: rgb(110 231 183);
+    }
+    html.dark .badge-failed {
+      background: rgb(136 19 55 / 0.5);
+      color: rgb(251 113 133);
+    }
+    html.dark .badge-active {
+      background: rgb(49 46 129 / 0.5);
+      color: rgb(165 180 252);
     }
   </style>
   {% block head %}{% endblock %}
