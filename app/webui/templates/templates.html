@@ -71,7 +71,7 @@
       </div>
     </div>
 
-    <!-- Preview snippet: | e escaped so HTML tags are shown as text, not rendered -->
+    <!-- Preview snippet -->
     <div class="px-5 py-3 bg-gray-50 dark:bg-gray-900/50">
       <pre class="text-xs text-gray-500 dark:text-gray-400 overflow-hidden whitespace-pre-wrap line-clamp-3">{{ previews[tpl] | e }}{% if previews[tpl]|length >= 400 %}...{% endif %}</pre>
     </div>
@@ -142,8 +142,8 @@
 
 {% endblock %}
 {% block scripts %}
-{% raw %}
 <script>
+{% raw %}
 const BASE = '/mail-templates';
 const editors = {};
 
@@ -269,6 +269,6 @@ function showToast(msg, type) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
-</script>
 {% endraw %}
+</script>
 {% endblock %}
