@@ -164,16 +164,14 @@
 const BASE = '/mail-templates';
 const editors = {};
 
-// Regex built at runtime to avoid Jinja2 misreading {# or {% in source
-const RE_JINJA_TAG = new RegExp('\\{' + '%[\\s\\S]*?%' + '\\}', 'g');
-const RE_VAR_FILENAME  = new RegExp('\\{' + '{\\s*filename\\s*' + '\\}' + '\\}', 'g');
-const RE_VAR_PRINTER   = new RegExp('\\{' + '{\\s*printer\\s*'  + '\\}' + '\\}', 'g');
-const RE_VAR_SENDER    = new RegExp('\\{' + '{\\s*sender\\s*'   + '\\}' + '\\}', 'g');
-const RE_VAR_STATUS    = new RegExp('\\{' + '{\\s*status\\s*'   + '\\}' + '\\}', 'g');
-const RE_VAR_JOB_ID    = new RegExp('\\{' + '{\\s*job_id\\s*'   + '\\}' + '\\}', 'g');
-const RE_VAR_TS        = new RegExp('\\{' + '{\\s*timestamp.*?' + '\\}' + '\\}', 'g');
+const RE_JINJA_TAG    = new RegExp('\\{' + '%[\\s\\S]*?%' + '\\}', 'g');
+const RE_VAR_FILENAME = new RegExp('\\{' + '{\\s*filename\\s*' + '\\}\\}', 'g');
+const RE_VAR_PRINTER  = new RegExp('\\{' + '{\\s*printer\\s*'  + '\\}\\}', 'g');
+const RE_VAR_SENDER   = new RegExp('\\{' + '{\\s*sender\\s*'   + '\\}\\}', 'g');
+const RE_VAR_STATUS   = new RegExp('\\{' + '{\\s*status\\s*'   + '\\}\\}', 'g');
+const RE_VAR_JOB_ID   = new RegExp('\\{' + '{\\s*job_id\\s*'   + '\\}\\}', 'g');
+const RE_VAR_TS       = new RegExp('\\{' + '{\\s*timestamp.*?' + '\\}\\}', 'g');
 
-// Load all preview snippets via fetch after page load
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#tpl-list [data-tpl-name]').forEach(async (card) => {
     const name = card.dataset.tplName;
@@ -195,7 +193,6 @@ async function openEditor(name) {
   wrap.classList.remove('hidden');
   const btn = document.getElementById('edit-btn-' + name);
   btn.textContent = '...';
-
   if (!editors[name]) {
     const res  = await fetch(BASE + '/' + encodeURIComponent(name) + '/content');
     const data = await res.json();
