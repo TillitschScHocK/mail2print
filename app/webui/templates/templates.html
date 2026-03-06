@@ -199,7 +199,7 @@ function previewTemplate(name) {
     .replace(/\{\{\s*status\s*\}\}/g, 'success')
     .replace(/\{\{\s*job_id\s*\}\}/g, 'abc-123-def')
     .replace(/\{\{\s*timestamp\[.*?\].*?\}\}/g, '2025-01-01 12:00:00')
-    .replace(/\{%.*?%\}/g, '');
+    .replace(/\{%[\s\S]*?%\}/g, '');
   const iframe = document.getElementById('preview-iframe');
   iframe.srcdoc = content;
   document.getElementById('preview-modal').classList.remove('hidden');
