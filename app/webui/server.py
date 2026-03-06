@@ -27,8 +27,6 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(UI_TEMPLATES))
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────────────
-
 def _load_jobs():
     if not JOBS_FILE.exists():
         return []
@@ -43,16 +41,14 @@ def _active_template():
         t = ACTIVE_TPL_FILE.read_text().strip()
         if t:
             return t
-    return os.getenv("CONFIRM_TEMPLATE", "default_en.html")
+    return os.getenv("CONFIRM_TEMPLATE", "default_en.j2")
 
 
 def _list_print_templates():
     if not PRINT_TPLS_DIR.exists():
         return []
-    return [f.name for f in sorted(PRINT_TPLS_DIR.iterdir()) if f.is_file() and f.suffix in (".html", ".txt")]
+    return [f.name for f in sorted(PRINT_TPLS_DIR.iterdir()) if f.is_file() and f.suffix in (".j2", ".txt")]
 
-
-# ── Routes ───────────────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -92,8 +88,6 @@ async def job_history(request: Request, page: int = 1, status: str = "", sender:
 
 @app.get("/mail-templates", response_class=HTMLResponse)
 async def tmpl_manager(request: Request):
-    # previews werden nicht mehr server-seitig gerendert,
-    # sondern per JS via /mail-templates/{name}/content geladen
     tpls   = _list_print_templates()
     active = _active_template()
     return templates.TemplateResponse("templates.html", {
@@ -144,8 +138,8 @@ class NewTemplatePayload(BaseModel):
 @app.post("/mail-templates/new")
 async def create_template(payload: NewTemplatePayload):
     name = payload.name.strip()
-    if not name.endswith(".html"):
-        name += ".html"
+    if not name.endswith(".j2"):
+        name += ".j2"
     path = (PRINT_TPLS_DIR / name).resolve()
     if not str(path).startswith(str(PRINT_TPLS_DIR.resolve())):
         return JSONResponse({"error": "Invalid name"}, status_code=400)

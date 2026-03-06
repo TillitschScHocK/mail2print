@@ -6,21 +6,14 @@
 #   ./avahi/       – Avahi-Service-Dateien (/etc/avahi/services)
 #   ./mail2print/  – Daten, Logs und Templates für mail2print
 #
-# Erster Start:
-#   cups-init startet cupsd kurz im Hintergrund, wartet bis die Configs
-#   generiert wurden, kopiert sie nach ./cups/ und beendet sich dann.
-#   Erst danach startet der echte cups-Container.
+# Mail-Templates haben die Endung .j2 (Jinja2), damit der UI-Templateloader
+# sie nicht versehentlich als UI-Templates interpretiert.
 #
 # Secrets in .env ablegen und per ${VAR_NAME} referenzieren.
 # ══════════════════════════════════════════════════════════════════════════════
 
 services:
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # Init-Container: generiert CUPS-Configs und kopiert sie nach ./cups/
-  # ./cups wird nach /mnt/cups-config gemountet, damit cupsd ungstört
-  # seine Configs in /etc/cups generieren kann.
-  # ────────────────────────────────────────────────────────────────────────────
   cups-init:
     image: drpsychick/airprint-bridge:latest
     container_name: cups-init
@@ -30,11 +23,6 @@ services:
       - ./init-cups-config.sh:/init-cups-config.sh:ro
     restart: "no"
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # CUPS / AirPrint-Bridge
-  # Webinterface: http://<host-ip>:631
-  # network_mode: host ist notwendig für USB-Drucker und mDNS (Avahi).
-  # ────────────────────────────────────────────────────────────────────────────
   cups:
     image: drpsychick/airprint-bridge:latest
     container_name: cups
@@ -54,9 +42,6 @@ services:
       - ./avahi:/etc/avahi/services
       - /var/run/dbus:/var/run/dbus
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # Avahi – mDNS/Bonjour-Daemon für Druckererkennung im Netzwerk
-  # ────────────────────────────────────────────────────────────────────────────
   avahi:
     image: flungo/avahi:latest
     container_name: avahi
@@ -66,10 +51,6 @@ services:
       - ./avahi:/etc/avahi/services
       - /var/run/dbus:/var/run/dbus
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # mail2print – E-Mail-zu-Drucker-Dienst
-  # WebUI: http://<host-ip>:635
-  # ────────────────────────────────────────────────────────────────────────────
   mail2print:
     build:
       context: .
@@ -95,7 +76,7 @@ services:
       - SLEEP_TIME=${SLEEP_TIME:-60}
       - ALLOWED_ATTACHMENT_TYPES=${ALLOWED_ATTACHMENT_TYPES:-pdf,docx,png,jpg}
       - ALLOWED_RECIPIENTS=${ALLOWED_RECIPIENTS:-}
-      - CONFIRM_TEMPLATE=${CONFIRM_TEMPLATE:-default_en.html}
+      - CONFIRM_TEMPLATE=${CONFIRM_TEMPLATE:-default_en.j2}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       - WEBUI_ENABLED=${WEBUI_ENABLED:-true}
 

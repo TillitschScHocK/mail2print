@@ -1,7 +1,4 @@
 #!/bin/sh
-# Entrypoint: schreibt /etc/cups/client.conf damit lp/lpstat den CUPS-Server
-# mit der korrekten IPP-Version ansprechen.
-
 set -e
 
 mkdir -p /etc/cups
@@ -18,10 +15,8 @@ else
     echo "[entrypoint] CUPS_SERVER not set, using default CUPS client config."
 fi
 
-# Default-Templates ins Volume-Verzeichnis kopieren, falls sie dort noch
-# nicht vorhanden sind. So bleiben eigene Templates unangetastet.
 mkdir -p /app/templates
-for src in /app/templates_default/*.html /app/templates_default/*.txt; do
+for src in /app/templates_default/*.j2 /app/templates_default/*.txt; do
     [ -f "$src" ] || continue
     fname="$(basename "$src")"
     if [ ! -f "/app/templates/$fname" ]; then
