@@ -3,30 +3,44 @@
 # init-cups-config.sh
 #
 # Wird einmalig vom cups-init-Container ausgeführt.
-# Kopiert alle CUPS-Standard-Konfigurationsdateien und -Verzeichnisse
-# aus dem Container-Image in das gemountete ./cups/-Verzeichnis auf dem Host,
-# sofern sie dort noch nicht vorhanden sind.
-#
-# Folgende Dateien werden kopiert (falls nicht vorhanden):
-#   classes.conf, cups-browsed.conf, cups-files.conf, cups-pdf.conf,
-#   cupsd.conf, printers.conf, snmp.conf, raw.convs, raw.types,
-#   tea4cups.conf
-#
-# Folgende Verzeichnisse werden angelegt (falls nicht vorhanden):
-#   interfaces/, ppd/, ssl/
+# Da das drpsychick/airprint-bridge-Image die CUPS-Configs erst beim Start
+# von cupsd generiert, wird cupsd hier kurz im Hintergrund gestartet,
+# gewartet bis die Dateien vorhanden sind, und dann gestoppt.
+# Anschließend werden alle Configs in das gemountete ./cups/-Verzeichnis
+# kopiert – jedoch nur, wenn sie dort noch NICHT vorhanden sind.
 # ══════════════════════════════════════════════════════════════════════════════
 
 set -e
 
-SRC="/etc/cups"
-DST="/etc/cups"
+MOUNT="/mnt/cups-config"
+CUPS_ETC="/etc/cups"
 
-# Sicherstellen, dass das Zielverzeichnis existiert
-mkdir -p "${DST}"
+echo "[cups-init] Starte cupsd einmalig zur Konfig-Generierung ..."
 
-echo "[cups-init] Prüfe CUPS-Konfigurationsdateien in ${DST} ..."
+# cupsd kurz im Hintergrund starten (ohne Mount, generiert Configs in /etc/cups)
+/usr/sbin/cupsd -f &
+CUPSD_PID=$!
 
-# Konfigurationsdateien: nur kopieren wenn noch nicht vorhanden
+# Warten bis cupsd.conf vorhanden ist (max. 15 Sekunden)
+WAIT=0
+until [ -f "${CUPS_ETC}/cupsd.conf" ] || [ "$WAIT" -ge 15 ]; do
+    sleep 1
+    WAIT=$((WAIT + 1))
+done
+
+# cupsd sauber beenden
+kill "$CUPSD_PID" 2>/dev/null || true
+sleep 1
+
+if [ ! -f "${CUPS_ETC}/cupsd.conf" ]; then
+    echo "[cups-init] FEHLER: cupsd.conf wurde nicht generiert. Breche ab."
+    exit 1
+fi
+
+echo "[cups-init] Configs generiert. Kopiere in ${MOUNT} ..."
+mkdir -p "${MOUNT}"
+
+# Konfigurationsdateien: nur kopieren wenn im Mount noch nicht vorhanden
 for FILE in \
     classes.conf \
     cups-browsed.conf \
@@ -39,26 +53,26 @@ for FILE in \
     raw.types \
     tea4cups.conf; do
 
-    if [ ! -f "${DST}/${FILE}" ]; then
-        if [ -f "${SRC}/${FILE}" ]; then
-            cp "${SRC}/${FILE}" "${DST}/${FILE}"
+    if [ ! -f "${MOUNT}/${FILE}" ]; then
+        if [ -f "${CUPS_ETC}/${FILE}" ]; then
+            cp "${CUPS_ETC}/${FILE}" "${MOUNT}/${FILE}"
             echo "[cups-init] Kopiert: ${FILE}"
         else
-            echo "[cups-init] Nicht im Image vorhanden (übersprungen): ${FILE}"
+            echo "[cups-init] Nicht vorhanden (übersprungen): ${FILE}"
         fi
     else
         echo "[cups-init] Bereits vorhanden (übersprungen): ${FILE}"
     fi
 done
 
-# Verzeichnisse anlegen falls nicht vorhanden
+# Verzeichnisse kopieren oder anlegen
 for DIR in interfaces ppd ssl; do
-    if [ ! -d "${DST}/${DIR}" ]; then
-        if [ -d "${SRC}/${DIR}" ]; then
-            cp -r "${SRC}/${DIR}" "${DST}/${DIR}"
+    if [ ! -d "${MOUNT}/${DIR}" ]; then
+        if [ -d "${CUPS_ETC}/${DIR}" ]; then
+            cp -r "${CUPS_ETC}/${DIR}" "${MOUNT}/${DIR}"
             echo "[cups-init] Verzeichnis kopiert: ${DIR}/"
         else
-            mkdir -p "${DST}/${DIR}"
+            mkdir -p "${MOUNT}/${DIR}"
             echo "[cups-init] Verzeichnis angelegt (leer): ${DIR}/"
         fi
     else
