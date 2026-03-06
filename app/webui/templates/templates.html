@@ -164,6 +164,15 @@
 const BASE = '/mail-templates';
 const editors = {};
 
+// Regex built at runtime to avoid Jinja2 misreading {# or {% in source
+const RE_JINJA_TAG = new RegExp('\\{' + '%[\\s\\S]*?%' + '\\}', 'g');
+const RE_VAR_FILENAME  = new RegExp('\\{' + '{\\s*filename\\s*' + '\\}' + '\\}', 'g');
+const RE_VAR_PRINTER   = new RegExp('\\{' + '{\\s*printer\\s*'  + '\\}' + '\\}', 'g');
+const RE_VAR_SENDER    = new RegExp('\\{' + '{\\s*sender\\s*'   + '\\}' + '\\}', 'g');
+const RE_VAR_STATUS    = new RegExp('\\{' + '{\\s*status\\s*'   + '\\}' + '\\}', 'g');
+const RE_VAR_JOB_ID    = new RegExp('\\{' + '{\\s*job_id\\s*'   + '\\}' + '\\}', 'g');
+const RE_VAR_TS        = new RegExp('\\{' + '{\\s*timestamp.*?' + '\\}' + '\\}', 'g');
+
 // Load all preview snippets via fetch after page load
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#tpl-list [data-tpl-name]').forEach(async (card) => {
@@ -227,13 +236,13 @@ function previewTemplate(name) {
   const cm = editors[name];
   if (!cm) return;
   const content = cm.getValue()
-    .replace(/\{\{\s*filename\s*\}\}/g, 'document.pdf')
-    .replace(/\{\{\s*printer\s*\}\}/g, 'Office Printer')
-    .replace(/\{\{\s*sender\s*\}\}/g, 'user@example.com')
-    .replace(/\{\{\s*status\s*\}\}/g, 'success')
-    .replace(/\{\{\s*job_id\s*\}\}/g, 'abc-123-def')
-    .replace(/\{\{\s*timestamp.*?\}\}/g, '2025-01-01 12:00:00')
-    .replace(/\{%[\s\S]*?%\}/g, '');
+    .replace(RE_VAR_FILENAME, 'document.pdf')
+    .replace(RE_VAR_PRINTER,  'Office Printer')
+    .replace(RE_VAR_SENDER,   'user@example.com')
+    .replace(RE_VAR_STATUS,   'success')
+    .replace(RE_VAR_JOB_ID,   'abc-123-def')
+    .replace(RE_VAR_TS,       '2025-01-01 12:00:00')
+    .replace(RE_JINJA_TAG,    '');
   document.getElementById('preview-iframe').srcdoc = content;
   document.getElementById('preview-modal').classList.remove('hidden');
 }
