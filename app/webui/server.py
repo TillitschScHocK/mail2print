@@ -1,8 +1,10 @@
 import os
 import json
+import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -50,6 +52,21 @@ def _list_print_templates():
     return [f.name for f in sorted(PRINT_TPLS_DIR.iterdir()) if f.is_file() and f.suffix in (".j2", ".txt")]
 
 
+def _sanitize_dom_id(value: str) -> str:
+    sanitized = re.sub(r"[^a-zA-Z0-9_-]", "-", value)
+    sanitized = re.sub(r"-+", "-", sanitized).strip("-")
+    return sanitized or "template"
+
+
+def _template_entry(name: str, active: str) -> dict:
+    return {
+        "name": name,
+        "active": name == active,
+        "dom_id": _sanitize_dom_id(name),
+        "url_name": quote(name, safe=""),
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     jobs = _load_jobs()
@@ -88,14 +105,29 @@ async def job_history(request: Request, page: int = 1, status: str = "", sender:
 
 @app.get("/mail-templates", response_class=HTMLResponse)
 async def tmpl_manager(request: Request):
-    tpls   = _list_print_templates()
     active = _active_template()
+    tpls = [_template_entry(name, active) for name in _list_print_templates()]
     return templates.TemplateResponse("templates.html", {
         "request": request,
         "templates": tpls,
         "active": active,
         "active_page": "templates",
     })
+
+
+@app.post("/mail-templates/new")
+async def create_template(payload: 'NewTemplatePayload'):
+    name = payload.name.strip()
+    if not name.endswith(".j2"):
+        name += ".j2"
+    path = (PRINT_TPLS_DIR / name).resolve()
+    if not str(path).startswith(str(PRINT_TPLS_DIR.resolve())):
+        return JSONResponse({"error": "Invalid name"}, status_code=400)
+    if path.exists():
+        return JSONResponse({"error": "Already exists"}, status_code=409)
+    PRINT_TPLS_DIR.mkdir(parents=True, exist_ok=True)
+    path.write_text(payload.content or "<!-- New template -->\n", encoding="utf-8")
+    return JSONResponse({"ok": True, "name": name})
 
 
 @app.post("/mail-templates/activate/{name}")
@@ -133,21 +165,6 @@ async def save_template(name: str, payload: SavePayload):
 class NewTemplatePayload(BaseModel):
     name: str
     content: str = ""
-
-
-@app.post("/mail-templates/new")
-async def create_template(payload: NewTemplatePayload):
-    name = payload.name.strip()
-    if not name.endswith(".j2"):
-        name += ".j2"
-    path = (PRINT_TPLS_DIR / name).resolve()
-    if not str(path).startswith(str(PRINT_TPLS_DIR.resolve())):
-        return JSONResponse({"error": "Invalid name"}, status_code=400)
-    if path.exists():
-        return JSONResponse({"error": "Already exists"}, status_code=409)
-    PRINT_TPLS_DIR.mkdir(parents=True, exist_ok=True)
-    path.write_text(payload.content or "<!-- New template -->\n", encoding="utf-8")
-    return JSONResponse({"ok": True, "name": name})
 
 
 @app.delete("/mail-templates/{name}")
